@@ -21,6 +21,7 @@
     "integration:smoke": "node ./scripts/verify-local-stack.mjs",
     "lint": "eslint .",
     "test": "npm run test --workspaces --if-present",
+    "test:db:migrations": "node ./scripts/test-db-migrations.mjs",
     "test:db:provisioning": "node ./scripts/test-db-provisioning.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

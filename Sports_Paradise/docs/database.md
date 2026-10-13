@@ -7,6 +7,12 @@ running (or another compatible Docker Compose runtime), and make the Docker
 CLI available on `PATH`. From the `Sports_Paradise` directory, copy
 `.env.example` to `.env`, then replace both local password placeholders with
 unique local values. Keep `.env` untracked; `.gitignore` excludes it.
+Replace `JWT_SIGNING_KEY` with a cryptographically random value of at least
+32 UTF-8 bytes. `WEB_ORIGIN` defaults to the local Vite origin; set it to the
+exact browser origin when using a different local or deployed frontend.
+Production and HTTPS origins use `Secure` session cookies. The API fails
+startup if the JWT key is missing or too short and never sends it to browser
+configuration.
 
 `POSTGRES_USER` and `POSTGRES_PASSWORD` configure the local bootstrap
 administrator used by the container initialization process; never use this
@@ -79,6 +85,32 @@ The migration history is stored in PostgreSQL's `pgmigrations` table. Keep
 migrations in `apps/api/migrations/` and commit them with the application code
 that needs the schema. Do not make undocumented manual schema edits. The
 application role owns objects it creates in the local `public` schema.
+
+The authentication persistence migration adds `users`, `auth_sessions`, and
+`login_throttle_state` without modifying foundation data. Emails are stored
+normalized and uniquely constrained; accounts default to active, non-admin
+status, and password hashes must use Argon2id encoding. Session records contain
+only a session identifier, account reference, timestamps, and revocation
+state. Failed-login state is keyed by a 64-character digest and caps its
+counter at five. No account, administrator, password, or signing secret is
+seeded by the migration.
+
+`POST /api/auth/signup` normalizes email addresses, hashes passwords with
+Argon2id, and creates automatically activated, non-admin accounts.
+`POST /api/auth/login` returns the session in an HttpOnly cookie only after
+valid credentials for an active account. Unknown accounts and incorrect
+passwords receive the same generic response; valid credentials for a
+deactivated account receive the specified support message. Five failed
+attempts within a five-minute window trigger a persisted five-minute
+cooldown, which a successful login clears.
+
+Run `npm run test:db:migrations` to apply and roll back migrations against an
+isolated disposable PostgreSQL Compose project, check account/session/throttle
+constraints, exercise session and account repositories, concurrent normalized
+signup uniqueness, Argon2id persistence, login cooldown/recovery, current-session
+revocation, and verify an unrelated foundation record survives both migration
+directions. The test uses synthetic credentials and removes only its own
+containers and volume.
 
 This foundation defines no sports-domain tables: domain entities, constraints,
 personal-data classification, and retention require approved feature

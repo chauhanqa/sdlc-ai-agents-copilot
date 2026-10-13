@@ -3,6 +3,9 @@ export interface AppConfig {
   port: number;
   databaseUrl: string;
   environment: string;
+  jwtSigningKey: Uint8Array;
+  webOrigin: string;
+  secureCookies: boolean;
 }
 
 const DEFAULT_PORT = 3000;
@@ -60,10 +63,45 @@ export function buildAppConfig(
     throw new Error("PORT must be a valid integer between 1 and 65535.");
   }
 
+  const databaseUrl = getRequiredEnvValue("DATABASE_URL", env);
+  const jwtSigningSecret = getRequiredEnvValue("JWT_SIGNING_KEY", env);
+  const jwtSigningKey = new TextEncoder().encode(jwtSigningSecret);
+  if (jwtSigningKey.byteLength < 32) {
+    throw new Error("JWT_SIGNING_KEY must be at least 32 UTF-8 bytes.");
+  }
+
+  const webOriginValue = env.WEB_ORIGIN?.trim() || "http://localhost:5173";
+  let webOrigin: URL;
+  try {
+    webOrigin = new URL(webOriginValue);
+  } catch {
+    throw new Error("WEB_ORIGIN must be a valid HTTP or HTTPS origin.");
+  }
+  if (
+    !["http:", "https:"].includes(webOrigin.protocol) ||
+    webOrigin.username ||
+    webOrigin.password ||
+    webOrigin.pathname !== "/" ||
+    webOrigin.search ||
+    webOrigin.hash
+  ) {
+    throw new Error("WEB_ORIGIN must be a valid HTTP or HTTPS origin.");
+  }
+
+  const environment = env.NODE_ENV?.trim() || "development";
+  const loopbackWebOrigin = ["localhost", "127.0.0.1", "[::1]"].includes(
+    webOrigin.hostname,
+  );
   return {
     host: env.HOST?.trim() || DEFAULT_HOST,
     port,
-    databaseUrl: getRequiredEnvValue("DATABASE_URL", env),
-    environment: env.NODE_ENV?.trim() || "development",
+    databaseUrl,
+    environment,
+    jwtSigningKey,
+    webOrigin: webOrigin.origin,
+    secureCookies:
+      environment === "production" ||
+      webOrigin.protocol === "https:" ||
+      !loopbackWebOrigin,
   };
 }

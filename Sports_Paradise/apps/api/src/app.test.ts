@@ -1,6 +1,23 @@
 import { describe, expect, it } from "vitest";
+import type { AppConfig } from "./config.js";
 import { buildApiApp } from "./app.js";
 import { buildAppConfig } from "./config.js";
+import { startServer } from "./server.js";
+
+const testSigningKey = "test-only-signing-key-with-at-least-32-bytes";
+
+function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
+  return {
+    host: "127.0.0.1",
+    port: 3000,
+    databaseUrl: "postgresql://localhost/sports_paradise",
+    environment: "test",
+    jwtSigningKey: new TextEncoder().encode(testSigningKey),
+    webOrigin: "http://localhost:5173",
+    secureCookies: false,
+    ...overrides,
+  };
+}
 
 describe("backend API foundation", () => {
   it("validates required configuration values", () => {
@@ -13,6 +30,7 @@ describe("backend API foundation", () => {
     expect(
       buildAppConfig({
         DATABASE_URL: "postgresql://localhost/sports_paradise",
+        JWT_SIGNING_KEY: testSigningKey,
       } as NodeJS.ProcessEnv).host,
     ).toBe("127.0.0.1");
   });
@@ -22,8 +40,57 @@ describe("backend API foundation", () => {
       buildAppConfig({
         DATABASE_URL: "postgresql://localhost/sports_paradise",
         PORT: "3e3",
+        JWT_SIGNING_KEY: testSigningKey,
       } as NodeJS.ProcessEnv),
     ).toThrow("PORT must be a valid integer between 1 and 65535.");
+  });
+
+  it("requires a sufficiently strong JWT signing key at startup", () => {
+    expect(() =>
+      buildAppConfig({
+        DATABASE_URL: "postgresql://localhost/sports_paradise",
+      } as NodeJS.ProcessEnv),
+    ).toThrow("JWT_SIGNING_KEY is required.");
+    expect(() =>
+      buildAppConfig({
+        DATABASE_URL: "postgresql://localhost/sports_paradise",
+        JWT_SIGNING_KEY: "too-short",
+      } as NodeJS.ProcessEnv),
+    ).toThrow("JWT_SIGNING_KEY must be at least 32 UTF-8 bytes.");
+  });
+
+  it("fails server startup when the JWT signing key is missing", async () => {
+    await expect(
+      startServer({
+        DATABASE_URL: "postgresql://localhost/sports_paradise",
+      } as NodeJS.ProcessEnv),
+    ).rejects.toThrow("JWT_SIGNING_KEY is required.");
+  });
+
+  it("normalizes and validates the configured browser origin", () => {
+    const config = buildAppConfig({
+      DATABASE_URL: "postgresql://localhost/sports_paradise",
+      JWT_SIGNING_KEY: testSigningKey,
+      WEB_ORIGIN: "https://sports.example/",
+      NODE_ENV: "production",
+    } as NodeJS.ProcessEnv);
+
+    expect(config.webOrigin).toBe("https://sports.example");
+    expect(config.secureCookies).toBe(true);
+    expect(
+      buildAppConfig({
+        DATABASE_URL: "postgresql://localhost/sports_paradise",
+        JWT_SIGNING_KEY: testSigningKey,
+        WEB_ORIGIN: "http://sports.example",
+      } as NodeJS.ProcessEnv).secureCookies,
+    ).toBe(true);
+    expect(() =>
+      buildAppConfig({
+        DATABASE_URL: "postgresql://localhost/sports_paradise",
+        JWT_SIGNING_KEY: testSigningKey,
+        WEB_ORIGIN: "https://sports.example/path",
+      } as NodeJS.ProcessEnv),
+    ).toThrow("WEB_ORIGIN must be a valid HTTP or HTTPS origin.");
   });
 
   it("returns a healthy readiness state when the database check succeeds", async () => {
@@ -33,6 +100,9 @@ describe("backend API foundation", () => {
         port: 3000,
         databaseUrl: "postgresql://user:pass@127.0.0.1:5432/sports_paradise",
         environment: "test",
+        jwtSigningKey: new TextEncoder().encode(testSigningKey),
+        webOrigin: "http://localhost:5173",
+        secureCookies: false,
       },
       {
         databaseHealthCheck: async () => {
@@ -60,6 +130,9 @@ describe("backend API foundation", () => {
         port: 3000,
         databaseUrl: "postgresql://user:pass@127.0.0.1:5432/sports_paradise",
         environment: "test",
+        jwtSigningKey: new TextEncoder().encode(testSigningKey),
+        webOrigin: "http://localhost:5173",
+        secureCookies: false,
       },
       {
         databaseHealthCheck: async () => {
@@ -94,6 +167,9 @@ describe("backend API foundation", () => {
         databaseUrl:
           "postgresql://app:synthetic-password-sentinel@localhost/db",
         environment: "test",
+        jwtSigningKey: new TextEncoder().encode(testSigningKey),
+        webOrigin: "http://localhost:5173",
+        secureCookies: false,
       },
       {
         databaseHealthCheck: async () => {
@@ -121,6 +197,9 @@ describe("backend API foundation", () => {
       port: 3000,
       databaseUrl: "postgresql://localhost/sports_paradise",
       environment: "test",
+      jwtSigningKey: new TextEncoder().encode(testSigningKey),
+      webOrigin: "http://localhost:5173",
+      secureCookies: false,
     });
 
     const response = await app.inject({
@@ -134,6 +213,7 @@ describe("backend API foundation", () => {
     expect(response.headers["access-control-allow-origin"]).toBe(
       "http://localhost:5173",
     );
+    expect(response.headers["access-control-allow-credentials"]).toBe("true");
     expect(response.headers.vary).toContain("Origin");
     await app.close();
   });
@@ -144,6 +224,9 @@ describe("backend API foundation", () => {
       port: 3000,
       databaseUrl: "postgresql://localhost/sports_paradise",
       environment: "test",
+      jwtSigningKey: new TextEncoder().encode(testSigningKey),
+      webOrigin: "http://localhost:5173",
+      secureCookies: false,
     });
 
     const response = await app.inject({
@@ -164,6 +247,9 @@ describe("backend API foundation", () => {
       port: 3000,
       databaseUrl: "postgresql://user:pass@127.0.0.1:5432/sports_paradise",
       environment: "test",
+      jwtSigningKey: new TextEncoder().encode(testSigningKey),
+      webOrigin: "http://localhost:5173",
+      secureCookies: false,
     });
 
     const response = await app.inject({
@@ -184,6 +270,9 @@ describe("backend API foundation", () => {
       port: 3000,
       databaseUrl: "postgresql://user:pass@127.0.0.1:5432/sports_paradise",
       environment: "test",
+      jwtSigningKey: new TextEncoder().encode(testSigningKey),
+      webOrigin: "http://localhost:5173",
+      secureCookies: false,
     });
 
     const response = await app.inject({
@@ -220,12 +309,7 @@ describe("backend API foundation", () => {
   });
 
   it("rejects extra fields in echo requests as described by OpenAPI", async () => {
-    const app = buildApiApp({
-      host: "127.0.0.1",
-      port: 3000,
-      databaseUrl: "******127.0.0.1:5432/sports_paradise",
-      environment: "test",
-    });
+    const app = buildApiApp(testConfig());
 
     const response = await app.inject({
       method: "POST",

@@ -1,10 +1,10 @@
 # Implementation Log
 
 - Project Name: Sports_Paradise
-- Project Mode: NEW_PROJECT
-- Project Root: `Sports_Paradise`
+- Project Mode: EXISTING_PROJECT
+- Project Root: `C:\Users\prashant_chauhan\Desktop\AI_AGENTS_PROJECT\copilot\sdlc-ai-agents-copilot\Sports_Paradise`
 - Implementation Plan: `docs/sdlc/impl-plan.md`
-- Overall Implementation Status: READY_FOR_CODE_REVIEW
+- Overall Implementation Status: IMPLEMENTATION_IN_PROGRESS
 
 ## TASK-001
 
@@ -843,6 +843,224 @@ synthetic credential is absent from Compose output and PostgreSQL logs.
 ### Result
 
 REMEDIATION_COMPLETE — CODE REVIEW / REVERIFICATION REQUIRED
+
+## TASK-008
+
+### Metadata
+
+- Task ID: TASK-008
+- Title: Additive account, session, and login-throttle persistence
+- Execution Status: COMPLETE
+- Verification Result: PASS
+- Execution Wave: WAVE-7
+- Priority: P0
+
+### Traceability
+
+- Requirements: FR-003, FR-008, FR-011, FR-012, FR-013, BR-007, NFR-SEC-001
+- Acceptance Criteria: AC-003, AC-008, AC-011, AC-012, AC-015
+- Components: CMP-003, CMP-006
+- Architecture Decisions: AD-004, AD-006, AD-007
+- Design Review Findings: None
+
+### Implementation Summary
+
+Added an additive PostgreSQL migration for normalized unique user emails,
+Argon2id password hashes, active-by-default non-admin accounts, consistent
+deactivation state, revocable 24-hour sessions, and bounded failed-login
+throttle records keyed by a fixed-width digest. No account, credential, JWT,
+signing secret, or administrator was seeded. Added an isolated Compose-based
+migration test covering constraints, session revocation, throttle bounds,
+up/down behavior, and preservation of an unrelated foundation record.
+
+### Files Added
+
+- `apps/api/migrations/20261013231500_create_auth_persistence.ts`
+- `scripts/test-db-migrations.mjs`
+
+### Files Modified
+
+- `package.json` — added the isolated migration validation script.
+- `docs/database.md` — documented auth persistence and migration validation.
+- `docs/sdlc/impl-plan.md` — TASK-008 execution status only.
+- `docs/sdlc/implementation-log.md` — this execution evidence.
+
+### Files Removed
+
+None.
+
+### Tests Added / Updated
+
+- Added an isolated disposable-PostgreSQL integration test that applies and
+  rolls back migrations, checks account/session/throttle constraints, and
+  verifies unrelated foundation data remains intact.
+
+### Validation Evidence
+
+- `npm test` — PASS; 13 API tests and 4 web tests.
+- `npm run typecheck` — PASS across all workspaces.
+- `npm run build` — PASS across all workspaces.
+- `npm run lint` — PASS.
+- `npm run format:check` — PASS.
+- `npm exec -- tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --skipLibCheck --types node apps/api/migrations/20261013231500_create_auth_persistence.ts` — PASS; migration TypeScript compiles independently of the API `src` include set.
+- `node --import tsx --input-type=module -e "import { up, down } from './apps/api/migrations/20261013231500_create_auth_persistence.ts'; const statements = []; const pgm = { sql: (sql) => statements.push(sql) }; await up(pgm); await down(pgm); if (statements.length !== 2 || !statements[0].includes('CREATE TABLE users') || !statements[1].includes('DROP TABLE users')) throw new Error('Migration did not emit expected up/down SQL'); console.log('Migration module runtime check passed: up/down emit SQL.');"` — PASS; the migration loads and emits its up/down SQL through the node-pg-migrate builder interface.
+- Initial `npm run test:db:migrations` — BLOCKED because Docker Desktop's Linux engine was unavailable; no database assertions ran. On retry, the engine became available and `npm run test:db:migrations` — PASS; an isolated PostgreSQL 17.6 Compose database applied and rolled back the migrations. Assertions passed for normalized unique email, Argon2id hash constraints, active non-admin defaults, consistent deactivation, 24-hour session expiry and revocation, bounded/digested login throttle state, and preservation of an unrelated foundation record before and after rollback. The script removed its isolated containers and volume.
+- `git diff --check` — PASS.
+
+### Completion Criteria
+
+- PASS — The migration applies and rolls back without changing unrelated
+  foundation data.
+- PASS — Constraints enforce normalized unique emails, Argon2id password-hash
+  encoding, active non-admin defaults, valid account deactivation state,
+  revocable sessions with no more than 24-hour lifetime, and bounded login
+  throttle state.
+- PASS — No public administrator, password plaintext, JWT, or signing secret
+  is seeded or stored by the schema.
+
+### Deviations
+
+None.
+
+### Known Issues
+
+None.
+
+### Escalations
+
+- Requirements Change: None.
+- Architecture Change: None.
+- Implementation Plan Change: None.
+
+### Result
+
+COMPLETE
+
+## TASK-009
+
+### Metadata
+
+- Task ID: TASK-009
+- Title: Implement signed JWT session and cookie lifecycle
+- Execution Status: COMPLETE
+- Verification Result: PASS
+- Execution Wave: WAVE-8
+- Priority: P0
+
+### Traceability
+
+- Requirements: FR-008, FR-010, FR-011, NFR-SEC-001
+- Acceptance Criteria: AC-008, AC-010, AC-011
+- Components: CMP-002, CMP-003, CMP-006
+- Architecture Decisions: AD-003, AD-004, AD-006, AD-008
+- Design Review Findings: None
+
+### Implementation Summary
+
+Added HS256-only JWT session issuance and validation with fixed issuer,
+audience, UUID subject/session identifiers, exact 24-hour expiry, persisted
+active-session checks, and active-account validation. Added scoped HttpOnly,
+SameSite=Lax cookies with environment-appropriate Secure handling and
+current-session-only logout. Configured server-only signing-key and browser
+origin validation, credentialed CORS for the configured origin, and
+state-changing cross-origin rejection. Added isolated PostgreSQL-backed
+session lifecycle coverage.
+
+Session issuance is an internal service primitive, not a public endpoint;
+it only persists for an active account. TASK-010 owns wiring issuance to
+successful credential authentication, and TASK-011 owns general protected
+route enforcement.
+
+### Files Added
+
+- `apps/api/src/auth/cookies.ts`
+- `apps/api/src/auth/session-repository.ts`
+- `apps/api/src/auth/sessions.test.ts`
+- `apps/api/src/auth/sessions.ts`
+- `scripts/test-auth-session-repository.mjs`
+
+### Files Modified
+
+- `.env.example` — added non-secret configuration placeholders.
+- `apps/api/package.json` and `package-lock.json` — added pinned JWT and
+  cookie dependencies.
+- `apps/api/src/app.test.ts` — covered configuration, CORS, logout, cookies,
+  and origin rejection.
+- `apps/api/src/app.ts` — wired cookie parsing, session service, and logout.
+- `apps/api/src/config.ts` — validated signing key and web origin; derived
+  Secure-cookie mode.
+- `docs/database.md` — documented authentication configuration and database
+  integration checks.
+- `docs/sdlc/impl-plan.md` — updated TASK-009 execution metadata only.
+- `docs/sdlc/implementation-log.md` — recorded TASK-009 evidence.
+- `scripts/test-db-migrations.mjs` — included live session-repository
+  integration coverage and reported its evidence after cleanup.
+
+### Files Removed
+
+None.
+
+### Tests Added / Updated
+
+- Added unit/API tests for session issue/rejection, expiry, malformed and
+  tampered tokens, algorithm substitution, inactive/revoked/unknown sessions,
+  cookie attributes, logout scope, and cross-origin rejection.
+- Added PostgreSQL integration checks for session issuance/lookup,
+  revocation, preservation of independent sessions, and account
+  deactivation.
+- Extended the isolated database migration test to run the session
+  repository integration check.
+
+### Validation Evidence
+
+- `npm test` — PASS; API 24/24 and web 4/4 tests.
+- `npm run test:db:migrations` — PASS; migration apply/rollback and schema
+  assertions passed; PostgreSQL session repository integration passed.
+- `npm run typecheck` — PASS across all workspaces.
+- `npm run build` — PASS across all workspaces; Vite production bundle built.
+- `npm run lint` — PASS.
+- `npm run format:check` — PASS.
+- `npm audit --omit=dev --audit-level=moderate` — PASS; 0 vulnerabilities
+  in audited runtime dependencies.
+- `git diff --check` — PASS.
+
+An initial migration-test invocation exited with a `ReferenceError` in the
+harness's final evidence-reporting scope after the database checks. The
+variable scope was corrected and the full migration/session integration
+command reran successfully. An initial lint run identified one unused import;
+it was removed and the complete lint check passed.
+
+### Completion Criteria
+
+- PASS — Session issuance is not exposed as a public route and persists only
+  for an active account; TASK-010 will call the internal service after
+  successful credential authentication.
+- PASS — Token validation rejects malformed, invalid-signature,
+  wrong-algorithm, expired, unknown, revoked, and inactive-account sessions;
+  repository integration checks confirm persisted validation and revocation.
+- PASS — Logout revokes only the authenticated session; unit and PostgreSQL
+  integration tests confirm independent sessions remain valid.
+- PASS — Cookie attributes, signing-key startup requirements, browser-origin
+  configuration, and origin rejection are demonstrated by tests.
+
+### Deviations
+
+None.
+
+### Known Issues
+
+None. Credential-authentication integration and general protected-route
+enforcement are planned for dependent TASK-010 and TASK-011.
+
+### Escalations
+
+- Requirements Change: None.
+- Architecture Change: None.
+- Implementation Plan Change: None.
+
+### Result
+
+COMPLETE
 
 ## Verification Finding VR-002
 
