@@ -2438,3 +2438,124 @@ REMEDIATION_COMPLETE
 READY_FOR_REREVIEW — VR-006 remains owned by the Verification Agent for
 independent assessment and resolution; this log does not mark VR-006
 `RESOLVED`.
+
+## Code Review Finding CR-007 — Standalone Vite development entry
+
+### Human Disposition and Eligibility
+
+- Human Decision: `ACCEPTED`, based on the explicit user instruction to accept
+  and remediate CR-007 on 2026-10-15. This authorizes remediation; it does not
+  approve Code Review or resolve the finding.
+- The owning `code-review.md` remains unchanged and still records its earlier
+  deferral. The Code Review Agent owns recording the updated finding lifecycle
+  and independently deciding resolution.
+- Related TASK: TASK-013.
+- Traceability: AC-010; CMP-001, CMP-002, CMP-004; AD-003, AD-008, AD-010;
+  DR-001.
+
+### Required Outcome
+
+The browser development entry must not serve protected pages outside the
+Fastify authorization boundary, and browser API requests must use a
+session-compatible origin/credential flow.
+
+### Remediation Summary
+
+The project workflow continues to start the API without starting a standalone
+Vite web server. Both the root `dev:web` alias and the web workspace's direct
+`dev` command now refuse to start Vite, while the approved browser entry is the
+Fastify origin at `http://localhost:3000`. Frontend API helpers now issue
+relative `/ready` and `/api/auth/logout` requests with same-origin credentials;
+the configurable cross-origin API base URL and its example environment value
+were removed. The existing Fastify-embedded Vite path and its protected-route
+checks were inspected and retained.
+
+The worktree already contained attempted CR-007 changes before this invocation.
+Relevant existing candidate changes in `package.json`,
+`scripts/local-dev.mjs`, `apps/api/src/config.ts`, `apps/api/src/app.ts`,
+`apps/api/src/app.test.ts`, `scripts/verify-local-stack.mjs`, and
+`docs/development-standards.md` were reviewed and retained. Unrelated existing
+authentication/security and repository-hook work was not altered.
+
+### Files Modified by This Remediation
+
+- `.env.example` — retained the Fastify browser origin and removed the obsolete
+  `VITE_API_BASE_URL`.
+- `apps/web/package.json` — disable the direct workspace Vite development
+  command with an actionable message.
+- `apps/web/src/api.ts` — use relative same-origin API routes.
+- `apps/web/src/App.tsx` — call the same-origin helpers and remove the
+  configurable API-origin display.
+- `apps/web/src/App.test.tsx` — assert relative request paths and
+  `credentials: "same-origin"` for readiness and logout requests.
+- `docs/sdlc/implementation-log.md` — record this CR-007 remediation evidence.
+
+### Focused Validation Evidence
+
+- Frontend unit tests
+  - Category: UNIT_TEST; scope: web workspace.
+  - Command: `npm --prefix Sports_Paradise run test --workspace @sports-paradise/web`
+  - Command source: root `package.json` workspace script.
+  - Result: PASS; exit status 0; 1 test file, 5 tests passed.
+- Frontend typecheck
+  - Category: TYPECHECK; scope: web workspace.
+  - Command: `npm --prefix Sports_Paradise run typecheck --workspace @sports-paradise/web`
+  - Command source: `apps/web/package.json` workspace script.
+  - Result: PASS; exit status 0; TypeScript completed.
+- Frontend build
+  - Category: BUILD; scope: web workspace.
+  - Command: `npm --prefix Sports_Paradise run build --workspace @sports-paradise/web`
+  - Command source: `apps/web/package.json` workspace script.
+  - Result: PASS; exit status 0; Vite production build completed.
+- API authorization and Fastify ingress regression tests
+  - Category: INTEGRATION_TEST; scope: API workspace.
+  - Command: `npm --prefix Sports_Paradise run test --workspace @sports-paradise/api`
+  - Command source: `apps/api/package.json` workspace script.
+  - Result: PASS; exit status 0; 4 test files, 45 tests passed, including
+    protected Vite middleware authorization and default Fastify browser-origin
+    coverage.
+- Standalone workspace development-entry negative check
+  - Category: SECURITY_CHECK; scope: web workspace development entry.
+  - Command: `npm --prefix Sports_Paradise run dev --workspace @sports-paradise/web`
+  - Command source: `apps/web/package.json` workspace script.
+  - Result: PASS; exit status 1 as intended; standalone Vite development is
+    disabled with an actionable message.
+- Root `dev:web` negative check
+  - Category: SECURITY_CHECK; scope: root frontend development alias.
+  - Command: `npm --prefix Sports_Paradise run dev:web`
+  - Command source: root `package.json`.
+  - Result: PASS; exit status 1 as intended; directs contributors to the root
+    Fastify development workflow.
+- An initial frontend test/typecheck run exposed a stale UI reference to the
+  removed API base URL. That display was removed; the frontend tests,
+  typecheck, and build were rerun successfully afterward.
+
+### Baseline Impact
+
+- Git repository root: parent repository containing `Sports_Paradise`.
+- Project root: `Sports_Paradise`.
+- Branch: `copilot/phase1`.
+- HEAD at remediation start: `1604a2c8e52be42dbb4a4886a41e9d2faf9bbfa1`.
+- The worktree was already dirty at invocation start: one pre-existing staged
+  hook, numerous unstaged changes, and untracked files. A later status snapshot
+  showed many of those paths staged; this agent issued no staging command and
+  preserved the observed index/worktree without staging, unstaging, or
+  committing files.
+- Material implementation change: YES. Independent Code Review must assess the
+  current candidate before Verification.
+
+### Escalations
+
+- Requirements Change: None.
+- Architecture Change: None.
+- Implementation Plan Change: None.
+
+### Result
+
+REMEDIATION_COMPLETE
+
+### Handoff
+
+READY_FOR_REREVIEW — CR-007 remains owned by the Code Review Agent for
+independent re-review and final resolution; this implementation evidence does
+not mark CR-007 `RESOLVED`.
