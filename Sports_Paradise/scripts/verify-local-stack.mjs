@@ -1,5 +1,5 @@
 const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:3000";
-const webBaseUrl = "http://localhost:5173";
+const webBaseUrl = "http://localhost:3000";
 
 async function request(url, options) {
   let response;
@@ -32,64 +32,62 @@ if (health.status !== "ok") {
   throw new Error("API health endpoint returned an unexpected status.");
 }
 
-const readyResponse = await request(`${apiBaseUrl}/ready`, {
-  headers: { Origin: webBaseUrl },
-});
-if (readyResponse.status !== 200) {
-  const payload = await readJson(readyResponse, "API readiness endpoint");
-  throw new Error(
-    `API is not ready (HTTP ${readyResponse.status}): ${payload.error ?? "database unavailable"}`,
-  );
-}
-const readiness = await readJson(readyResponse, "API readiness endpoint");
-if (readiness.status !== "ready" || readiness.database !== "connected") {
-  throw new Error("API readiness did not confirm database connectivity.");
-}
-if (readyResponse.headers.get("access-control-allow-origin") !== webBaseUrl) {
-  throw new Error("API does not allow the configured local frontend origin.");
+const protectedOperations = [
+  {
+    label: "API readiness",
+    url: `${apiBaseUrl}/ready`,
+  },
+  {
+    label: "OpenAPI contract",
+    url: `${apiBaseUrl}/openapi.json`,
+  },
+  {
+    label: "echo API operation",
+    url: `${apiBaseUrl}/api/echo`,
+    options: {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "integration-smoke" }),
+    },
+  },
+];
+
+for (const { label, url, options } of protectedOperations) {
+  const response = await request(url, options);
+  if (response.status !== 401) {
+    throw new Error(
+      `${label} returned HTTP ${response.status} without a session, expected 401.`,
+    );
+  }
+  const payload = await readJson(response, label);
+  if (payload.error !== "Authentication required.") {
+    throw new Error(`${label} returned an unexpected unauthenticated payload.`);
+  }
 }
 
-const echoResponse = await request(`${apiBaseUrl}/api/echo`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ message: "integration-smoke" }),
-});
-if (!echoResponse.ok) {
-  throw new Error(`API contract check returned HTTP ${echoResponse.status}.`);
+const loginResponse = await request(`${apiBaseUrl}/login`);
+if (loginResponse.status !== 200) {
+  throw new Error(`Public login page returned HTTP ${loginResponse.status}.`);
 }
-const echo = await readJson(echoResponse, "API echo endpoint");
-if (
-  echo.message !== "integration-smoke" ||
-  echo.echoed !== "integration-smoke"
-) {
-  throw new Error("API contract returned an unexpected echo response.");
+const loginHtml = await loginResponse.text();
+if (!loginHtml.includes('action="/api/auth/login"')) {
+  throw new Error("Public login page did not render the standalone auth form.");
 }
 
-const invalidRequest = await request(`${apiBaseUrl}/api/echo`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ unexpected: true }),
+const protectedPageResponse = await request(`${apiBaseUrl}/dashboard`, {
+  headers: { Accept: "text/html,application/xhtml+xml" },
 });
-if (invalidRequest.status !== 400) {
+if (protectedPageResponse.status !== 401) {
   throw new Error(
-    `Malformed API input returned HTTP ${invalidRequest.status}, expected 400.`,
+    `Protected page navigation returned HTTP ${protectedPageResponse.status}, expected 401.`,
   );
 }
-const invalidPayload = await readJson(invalidRequest, "Malformed API response");
-if (invalidPayload.error?.code !== "VALIDATION_ERROR") {
-  throw new Error("Malformed API input did not return a validation error.");
+if (protectedPageResponse.headers.get("location")) {
+  throw new Error("Protected page navigation should not redirect.");
 }
-
-const contractResponse = await request(`${apiBaseUrl}/openapi.json`);
-const contract = await readJson(contractResponse, "OpenAPI endpoint");
-if (
-  !contractResponse.ok ||
-  contract.openapi !== "3.0.3" ||
-  !contract.paths["/ready"]
-) {
-  throw new Error(
-    "OpenAPI endpoint does not describe the readiness interface.",
-  );
+const protectedPageHtml = await protectedPageResponse.text();
+if (!protectedPageHtml.includes('action="/api/auth/login"')) {
+  throw new Error("Protected page request did not render the login document.");
 }
 
 const webResponse = await request(webBaseUrl);
@@ -102,8 +100,6 @@ if (!webHtml.includes('<div id="root"></div>')) {
 }
 
 console.log("Local integration smoke checks passed:");
-console.log("- API health and database readiness");
-console.log("- frontend-origin access to the readiness contract");
-console.log("- valid and malformed API contract requests");
-console.log("- OpenAPI contract availability");
+console.log("- public API liveness and protected readiness/API operations");
+console.log("- public login page and protected page auth gate");
 console.log("- frontend application shell delivery");

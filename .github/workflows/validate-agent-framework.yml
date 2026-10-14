@@ -1,0 +1,116 @@
+name: Validate Agentic SDLC Framework
+
+on:
+  pull_request:
+    paths:
+      - ".github/agents/**"
+      - ".github/skills/**"
+      - ".github/workflows/validate-agent-framework.yml"
+      - ".githooks/**"
+      - "scripts/setup-hooks.sh"
+      - ".github/copilot-instructions.md"
+
+  push:
+    paths:
+      - ".github/agents/**"
+      - ".github/skills/**"
+      - ".github/workflows/validate-agent-framework.yml"
+      - ".githooks/**"
+      - "scripts/setup-hooks.sh"
+      - ".github/copilot-instructions.md"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agentic-sdlc-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-framework:
+    name: Validate Agentic SDLC contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Verify hook files are executable
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -x .githooks/pre-commit
+          test -x .githooks/pre-push
+          test -x .githooks/commit-msg
+          test -x scripts/setup-hooks.sh
+
+          echo "Hook executable permissions verified."
+
+      - name: Validate shell script syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bash -n .githooks/pre-commit
+          bash -n .githooks/pre-push
+          bash -n .githooks/commit-msg
+          bash -n scripts/setup-hooks.sh
+
+          echo "Shell script syntax validation passed."
+
+      - name: Validate Agentic SDLC contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python .github/skills/agent-contract-validator/validate_agents.py
+
+      - name: Enforce zero validator warnings
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python .github/skills/agent-contract-validator/validate_agents.py \
+            --json > validation-result.json
+
+          cat validation-result.json
+
+          python - <<'PY'
+          import json
+          import sys
+
+          with open("validation-result.json", encoding="utf-8") as file:
+              result = json.load(file)
+
+          errors = result.get("error_count", 0)
+          warnings = result.get("warning_count", 0)
+          status = result.get("result")
+
+          print()
+          print(f"Result: {status}")
+          print(f"Errors: {errors}")
+          print(f"Warnings: {warnings}")
+
+          if status != "PASS":
+              print("ERROR: Agentic SDLC contract validation failed.")
+              sys.exit(1)
+
+          if errors != 0:
+              print("ERROR: Contract validation contains errors.")
+              sys.exit(1)
+
+          if warnings != 0:
+              print("ERROR: Contract validation contains warnings.")
+              sys.exit(1)
+
+          print("Agentic SDLC framework validation passed with zero warnings.")
+          PY

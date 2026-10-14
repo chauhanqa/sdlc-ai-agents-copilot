@@ -14,7 +14,7 @@
     "db:up": "docker compose up -d --wait database",
     "dev": "node ./scripts/local-dev.mjs",
     "dev:api": "npm run dev --workspace @sports-paradise/api",
-    "dev:web": "npm run dev --workspace @sports-paradise/web -- --host 127.0.0.1",
+    "dev:web": "node -e \"console.error('Development frontend is served by the Fastify API at http://localhost:3000. Run npm run dev instead.'); process.exit(1);\"",
     "dev:db": "npm run db:up",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

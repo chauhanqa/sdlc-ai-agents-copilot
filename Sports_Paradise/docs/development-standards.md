@@ -92,13 +92,14 @@ Use the approved local workflow from the repository root:
    local PostgreSQL container can start. On Windows, ensure the WSL/Linux
    engine is available before running the database workflow.
 3. Start the database and app stack with `npm run dev`.
-   - The root script provisions PostgreSQL, launches the backend API, and
-     starts the Vite frontend.
+   - The root script provisions PostgreSQL and launches the backend API.
+   - In development, the API serves the browser app through the Fastify
+     ingress on `http://localhost:3000`, which keeps protected page auth checks
+     and same-origin session cookies aligned with the approved boundary.
    - The API waits for the database and exposes readiness on
      `http://localhost:3000/ready`.
-   - The frontend is served on `http://localhost:5173`.
-   - Both development servers bind to loopback by default and are not exposed
-     to other network interfaces.
+   - Do not launch a standalone Vite server for local development; the direct
+     `5173` entry bypasses the protected-page authorization boundary.
    - Run `npm run integration:smoke` in a second terminal to verify the API,
      database readiness, browser-origin contract, and frontend shell together.
 4. Use `npm run db:down` to stop the database container when you are done.
@@ -110,5 +111,7 @@ Use the approved local workflow from the repository root:
    database.
 
 The repository's root scripts (`npm run dev`, `npm run dev:api`,
-`npm run dev:web`, `npm run db:up`, and `npm run db:down`) are the approved
-local developer commands for the foundation stack.
+`npm run db:up`, and `npm run db:down`) are the approved local developer
+commands for the foundation stack. The browser is served through the Fastify
+API at `http://localhost:3000`; standalone Vite startup is intentionally not
+used in the approved development workflow.

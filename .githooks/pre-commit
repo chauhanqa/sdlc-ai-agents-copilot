@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "Checking staged changes for Agentic SDLC framework updates..."
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+
+if [ -z "$REPO_ROOT" ]; then
+    echo "ERROR: Unable to determine Git repository root."
+    exit 1
+fi
+
+cd "$REPO_ROOT"
+
+VALIDATOR=".github/skills/agent-contract-validator/validate_agents.py"
+
+if [ ! -f "$VALIDATOR" ]; then
+    echo "ERROR: Agent Contract Validator not found:"
+    echo "  $VALIDATOR"
+    exit 1
+fi
+
+CHANGED_FILES="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+if [ -z "$CHANGED_FILES" ]; then
+    echo "No staged files detected."
+    exit 0
+fi
+
+FRAMEWORK_FILES="$(printf '%s\n' "$CHANGED_FILES" \
+    | grep -E '^\.github/(agents|skills)/' || true)"
+
+if [ -z "$FRAMEWORK_FILES" ]; then
+    echo "No Agentic SDLC agent or skill changes detected."
+    echo "Skipping Agent Contract Validator."
+    exit 0
+fi
+
+echo ""
+echo "Agentic SDLC framework changes detected:"
+printf '%s\n' "$FRAMEWORK_FILES" | sed 's/^/  - /'
+
+echo ""
+echo "Running Agent Contract Validator..."
+echo ""
+
+PYTHON_BIN="$(command -v python3 || command -v python || true)"
+
+if [ -z "$PYTHON_BIN" ]; then
+    echo "ERROR: Python 3 is required to run the Agent Contract Validator."
+    exit 1
+fi
+
+"$PYTHON_BIN" "$VALIDATOR"
+
+echo ""
+echo "Pre-commit Agentic SDLC validation passed."

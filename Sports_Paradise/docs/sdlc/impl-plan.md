@@ -689,7 +689,9 @@ foundation work and are not authorized for re-execution by this revision.
 - **Dependencies:** TASK-008, TASK-009
 - **Blocks:** TASK-011, TASK-012, TASK-015
 - **Parallel With:** None.
-- **Status:** IN_PROGRESS
+- **Status:** COMPLETE
+- **Verification Result:** PASS
+- **Implementation Evidence:** `docs/sdlc/implementation-log.md#task-010`
 - **Implementation Scope:** Implement public signup and login endpoints,
   server-side input validation, normalized unique email handling, automatic
   activation, eight-character minimum, Argon2id password hashing/verification,
@@ -742,7 +744,9 @@ foundation work and are not authorized for re-execution by this revision.
 - **Dependencies:** TASK-004, TASK-009, TASK-010, TASK-015
 - **Blocks:** TASK-012, TASK-013
 - **Parallel With:** None.
-- **Status:** NOT_STARTED
+- **Status:** COMPLETE
+- **Verification Result:** PASS
+- **Implementation Evidence:** `docs/sdlc/implementation-log.md#task-011`
 - **Implementation Scope:** Add an exact method/path public allow-list for
   page routes `/login` and `/signup`, `GET /health`, public credential operations
   `POST /api/auth/signup` and `POST /api/auth/login`, and explicitly
@@ -804,7 +808,9 @@ foundation work and are not authorized for re-execution by this revision.
 - **Dependencies:** TASK-010, TASK-011
 - **Blocks:** TASK-013
 - **Parallel With:** None.
-- **Status:** NOT_STARTED
+- **Status:** COMPLETE
+- **Verification Result:** PASS
+- **Implementation Evidence:** `docs/sdlc/implementation-log.md#task-012`
 - **Implementation Scope:** Replace the current readiness-only React view
   with the protected dashboard/application shell. Implement same-origin
   credentialed API calls that rely on the HttpOnly cookie without reading or
@@ -854,7 +860,9 @@ foundation work and are not authorized for re-execution by this revision.
 - **Dependencies:** TASK-006, TASK-011, TASK-012
 - **Blocks:** TASK-014
 - **Parallel With:** None.
-- **Status:** NOT_STARTED
+- **Status:** COMPLETE
+- **Verification Result:** PASS
+- **Implementation Evidence:** `docs/sdlc/implementation-log.md#task-013`
 - **Implementation Scope:** Update local startup and Fastify/Vite integration
   so document, API, static, and required HMR requests flow through the
   Fastify route policy. Use Vite middleware behind the guard in development
@@ -914,7 +922,9 @@ foundation work and are not authorized for re-execution by this revision.
 - **Dependencies:** TASK-013
 - **Blocks:** None.
 - **Parallel With:** None.
-- **Status:** NOT_STARTED
+- **Status:** COMPLETE
+- **Verification Result:** PASS
+- **Implementation Evidence:** `docs/sdlc/implementation-log.md#task-014`
 - **Implementation Scope:** Add/run integrated regression coverage across
   database migrations, signup/login/logout, session revocation, account
   deactivation, throttling, public/protected route behavior, standalone
@@ -967,7 +977,9 @@ foundation work and are not authorized for re-execution by this revision.
 - **Dependencies:** TASK-008, TASK-009, TASK-010
 - **Blocks:** TASK-011
 - **Parallel With:** None.
-- **Status:** NOT_STARTED
+- **Status:** COMPLETE
+- **Verification Result:** PASS
+- **Implementation Evidence:** `docs/sdlc/implementation-log.md#task-015`
 - **Implementation Scope:** Implement
   `POST /api/admin/users/{id}/deactivate` for an active authenticated
   administrator only. Reject unauthenticated and non-administrator callers;

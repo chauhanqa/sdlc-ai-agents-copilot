@@ -33,6 +33,7 @@ class MemoryAccountRepository implements AccountRepository {
       lastName: account.lastName,
       passwordHash: account.passwordHash,
       status: "active",
+      role: "user",
     };
     this.users.set(account.email, created);
     return {
@@ -43,10 +44,33 @@ class MemoryAccountRepository implements AccountRepository {
     };
   }
 
+  async findAccountById(id: string): Promise<AccountCredentials | null> {
+    for (const record of this.users.values()) {
+      if (record.id === id) {
+        return record;
+      }
+    }
+    return null;
+  }
+
   async findCredentialsByEmail(
     email: string,
   ): Promise<AccountCredentials | null> {
     return this.users.get(email) ?? null;
+  }
+
+  async deactivateAccount(
+    id: string,
+  ): Promise<"deactivated" | "already_deactivated" | "not_found"> {
+    for (const [email, record] of this.users.entries()) {
+      if (record.id !== id) continue;
+      if (record.status === "deactivated") {
+        return "already_deactivated";
+      }
+      this.users.set(email, { ...record, status: "deactivated" });
+      return "deactivated";
+    }
+    return "not_found";
   }
 
   async isLoginBlocked(loginKeyHash: string): Promise<boolean> {

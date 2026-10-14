@@ -19,8 +19,8 @@ try {
 }
 
 const npmCliPath = process.env.npm_execpath;
-const apiReadyUrl = "http://localhost:3000/ready";
-const webReadyUrl = "http://localhost:5173";
+const apiHealthUrl = "http://localhost:3000/health";
+const webUrl = "http://localhost:3000";
 
 if (!npmCliPath) {
   throw new Error("Start the local stack with `npm run dev`.");
@@ -42,14 +42,14 @@ function startProcess(name, args) {
   return child;
 }
 
-async function waitForService(url, timeoutMs, label) {
+async function waitForService(url, timeoutMs, label, acceptedStatusCodes = [200]) {
   const started = Date.now();
   let lastStatus;
 
   while (Date.now() - started < timeoutMs) {
     try {
       const response = await fetch(url, { method: "GET" });
-      if (response.ok) {
+      if (response.ok || acceptedStatusCodes.includes(response.status)) {
         return;
       }
       lastStatus = response.status;
@@ -80,15 +80,10 @@ async function waitForDatabaseStartup() {
 }
 
 let api;
-let web;
 
 function shutdown() {
   if (api && !api.killed) {
     api.kill("SIGINT");
-  }
-
-  if (web && !web.killed) {
-    web.kill("SIGINT");
   }
 
   process.exit(0);
@@ -97,15 +92,18 @@ function shutdown() {
 try {
   await waitForDatabaseStartup();
   api = startProcess("api", ["run", "dev:api"]);
-  web = startProcess("web", ["run", "dev:web"]);
 
-  await waitForService(apiReadyUrl, 60000, "API");
-  await waitForService(webReadyUrl, 60000, "Web app");
+  // `db:up` waits for the PostgreSQL application-role health check; `/health`
+  // is the unauthenticated liveness endpoint for the API. The browser is served
+  // through the Fastify ingress on the same loopback origin to keep the auth
+  // boundary consistent for protected pages and same-origin session requests.
+  await waitForService(apiHealthUrl, 60000, "API");
+  await waitForService(webUrl, 60000, "Web app", [200, 401]);
 
   console.log("Sports_Paradise local development environment is running.");
-  console.log(`API readiness endpoint: ${apiReadyUrl}`);
-  console.log(`Web app: ${webReadyUrl}`);
-  console.log("Press Ctrl+C to stop the API and frontend processes.");
+  console.log(`API health endpoint: ${apiHealthUrl}`);
+  console.log(`Browser entry: ${webUrl}`);
+  console.log("Press Ctrl+C to stop the API process.");
 
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
@@ -119,10 +117,6 @@ try {
 
   if (api && !api.killed) {
     api.kill("SIGINT");
-  }
-
-  if (web && !web.killed) {
-    web.kill("SIGINT");
   }
 
   process.exit(1);

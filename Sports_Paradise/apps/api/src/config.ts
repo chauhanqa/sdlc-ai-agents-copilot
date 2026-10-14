@@ -29,23 +29,15 @@ export function redactConnectionString(value: string): string {
     return value;
   }
 
-  try {
-    const parsed = new URL(value);
-    const userinfo = parsed.username ? "[REDACTED]" : "";
-    const password = parsed.password ? ":[REDACTED]" : "";
-
-    parsed.username = userinfo;
-    parsed.password = password;
-
-    return parsed.toString();
-  } catch {
-    return value
-      .replace(
-        /(postgres(?:ql)?:\/\/)([^:@]+)(:[^@]+)?@/i,
-        "$1[REDACTED]@[REDACTED]@",
-      )
-      .replace(/(postgres(?:ql)?:\/\/)([^@]+)@/i, "$1[REDACTED]@");
-  }
+  return value.replace(
+    /(postgres(?:ql)?:\/\/)([^@\s]+)@/gi,
+    (_, prefix: string, userinfo: string) => {
+      const [rawUsername, ...rawPasswordParts] = userinfo.split(":");
+      const username = rawUsername.length > 0 ? "[REDACTED]" : "";
+      const password = rawPasswordParts.length > 0 ? ":[REDACTED]" : "";
+      return `${prefix}${username}${password}@`;
+    },
+  );
 }
 
 export function buildAppConfig(
@@ -70,7 +62,7 @@ export function buildAppConfig(
     throw new Error("JWT_SIGNING_KEY must be at least 32 UTF-8 bytes.");
   }
 
-  const webOriginValue = env.WEB_ORIGIN?.trim() || "http://localhost:5173";
+  const webOriginValue = env.WEB_ORIGIN?.trim() || "http://localhost:3000";
   let webOrigin: URL;
   try {
     webOrigin = new URL(webOriginValue);

@@ -5,20 +5,20 @@ export interface ApiHealthStatus {
   error?: string;
 }
 
-export const DEFAULT_API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  "http://localhost:3000";
-
-export async function fetchApiStatus(
-  baseUrl: string = DEFAULT_API_BASE_URL,
-): Promise<ApiHealthStatus> {
-  const response = await fetch(`${baseUrl}/ready`, {
+export async function fetchApiStatus(): Promise<ApiHealthStatus> {
+  const response = await fetch("/ready", {
+    credentials: "same-origin",
+    cache: "no-store",
     headers: {
       Accept: "application/json",
     },
   });
 
   const payload = (await response.json().catch(() => ({}))) as ApiHealthStatus;
+
+  if (response.status === 401) {
+    throw new Error(payload.error ?? "Authentication required.");
+  }
 
   if (!response.ok) {
     throw new Error(
@@ -28,4 +28,24 @@ export async function fetchApiStatus(
   }
 
   return payload;
+}
+
+export async function logoutCurrentSession(): Promise<void> {
+  const response = await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (response.status === 204 || response.ok) {
+    return;
+  }
+
+  const payload = (await response.json().catch(() => ({}))) as {
+    error?: string;
+  };
+  throw new Error(payload.error ?? "Unable to log out of the current session.");
 }

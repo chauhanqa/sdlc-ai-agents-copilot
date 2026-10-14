@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+COMMIT_MSG_FILE="$1"
+
+if [ ! -f "$COMMIT_MSG_FILE" ]; then
+    echo "ERROR: Commit message file not found."
+    exit 1
+fi
+
+COMMIT_MSG="$(head -n 1 "$COMMIT_MSG_FILE")"
+
+# Allow Git-generated merge/revert commits.
+if echo "$COMMIT_MSG" | grep -Eq '^(Merge |Revert ")'; then
+    exit 0
+fi
+
+PATTERN='^(feat|fix|docs|refactor|test|chore|ci|build|perf|revert)(\([a-zA-Z0-9._-]+\))?: .+'
+
+if ! echo "$COMMIT_MSG" | grep -Eq "$PATTERN"; then
+    echo ""
+    echo "ERROR: Invalid commit message."
+    echo ""
+    echo "Expected format:"
+    echo "  type(scope): description"
+    echo ""
+    echo "Allowed types:"
+    echo "  feat"
+    echo "  fix"
+    echo "  docs"
+    echo "  refactor"
+    echo "  test"
+    echo "  chore"
+    echo "  ci"
+    echo "  build"
+    echo "  perf"
+    echo "  revert"
+    echo ""
+    echo "Examples:"
+    echo "  feat(skills): add document quality skill"
+    echo "  refactor(agents): simplify SDLC orchestrator"
+    echo "  fix(validator): support VC identifier namespace"
+    echo "  ci(framework): add contract validation workflow"
+    echo ""
+    echo "Current message:"
+    echo "  $COMMIT_MSG"
+    echo ""
+
+    exit 1
+fi

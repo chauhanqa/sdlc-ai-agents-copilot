@@ -8,8 +8,9 @@ CLI available on `PATH`. From the `Sports_Paradise` directory, copy
 `.env.example` to `.env`, then replace both local password placeholders with
 unique local values. Keep `.env` untracked; `.gitignore` excludes it.
 Replace `JWT_SIGNING_KEY` with a cryptographically random value of at least
-32 UTF-8 bytes. `WEB_ORIGIN` defaults to the local Vite origin; set it to the
-exact browser origin when using a different local or deployed frontend.
+32 UTF-8 bytes. `WEB_ORIGIN` defaults to the local Fastify browser origin at
+`http://localhost:3000`; set it to the exact browser origin when using a
+different local or deployed frontend.
 Production and HTTPS origins use `Secure` session cookies. The API fails
 startup if the JWT key is missing or too short and never sends it to browser
 configuration.
@@ -111,6 +112,100 @@ signup uniqueness, Argon2id persistence, login cooldown/recovery, current-sessio
 revocation, and verify an unrelated foundation record survives both migration
 directions. The test uses synthetic credentials and removes only its own
 containers and volume.
+
+## Local Initial Administrator and Account Deactivation
+
+This is an operator-controlled procedure for a local development database
+only. It does not define production provisioning or recovery. Public signup
+always creates a non-administrator account; never add a public privilege-grant
+route or put credentials, passwords, session cookies, or signing keys in
+source control, command arguments, shell history, or this guide.
+
+1. Start the local database and application using the setup above, and apply
+   pending migrations with
+   `npm run db:migrate --workspace @sports-paradise/api`. Open the local
+   `/signup` page and create a dedicated account for the trusted operator.
+   Use a unique strong password and retain it only in an approved password
+   manager. Signup alone does not grant administrator privileges.
+2. Open an interactive SQL session as the non-superuser application role.
+   From the project root, run:
+
+   ```sh
+   docker compose exec database sh -c 'PGPASSWORD="$POSTGRES_APP_PASSWORD" psql --set=ON_ERROR_STOP=1 --username "$POSTGRES_APP_USER" --dbname "$POSTGRES_DB"'
+   ```
+
+   Do not connect as `POSTGRES_USER`; that bootstrap database administrator
+   is not for application or routine operator use. The command reads the
+   application-role password from the database container environment rather
+   than putting it in the command line.
+
+3. In `psql`, identify the newly created account by its normalized email and
+   verify the returned email and active, non-admin state. `\prompt` keeps the
+   lookup value out of SQL history:
+
+   ```sql
+   \prompt 'New operator account email: ' account_email
+   SELECT id, email, account_role, account_status
+   FROM users
+   WHERE email = lower(btrim(:'account_email'));
+   ```
+
+   Stop if the result is not exactly the intended active account with role
+   `user`. Copy its UUID from this result, then promote only that confirmed
+   row in a transaction:
+
+   ```sql
+   BEGIN;
+   UPDATE users
+   SET account_role = 'admin', updated_at = NOW()
+   WHERE id = '<confirmed-account-uuid>'
+     AND account_role = 'user'
+     AND account_status = 'active'
+   RETURNING id, email, account_role, account_status;
+   ```
+
+   Commit only if exactly that one account is returned with role `admin` and
+   status `active`; otherwise run `ROLLBACK` and investigate. Close `psql`
+   when done. Keep the bootstrap DB role and application credentials private.
+   Record the operator, date/time, account UUID, and outcome in the team's
+   approved private operational record; never record the password or any
+   session/signing secret.
+
+4. Sign in to the local application as that operator and confirm the session
+   is active. No privilege is granted by changing signup input or by calling
+   a public API.
+5. To deactivate an account, identify and verify the intended target's UUID
+   and email using the same read-only `psql` lookup above. While signed in as
+   an active administrator in the same local browser, use the browser
+   developer console on the application origin to call the existing
+   administrator endpoint:
+
+   ```js
+   const response = await fetch(
+     "/api/admin/users/<target-account-uuid>/deactivate",
+     {
+       method: "POST",
+       credentials: "same-origin",
+     },
+   );
+   console.log(response.status, await response.json());
+   ```
+
+   Confirm HTTP 200 and the response identifies the intended account with
+   status `deactivated`. The server rejects anonymous callers and
+   authenticated non-administrators; successful deactivation revokes the
+   target's outstanding sessions. Confirm the target cannot use a protected
+   operation and that a login attempt with its valid credentials displays
+   “Your account has been deactivated. Please contact support.” Do not copy
+   cookies into commands or logs. Record the operator, date/time, target UUID,
+   and result in the approved private operational record.
+
+This manual role change is limited to a trusted local operator using the
+loopback-bound local database and its non-superuser application role. It is
+not a production procedure, an administrator UI, or a supported means of
+granting privileges in another environment. If the operator cannot verify
+the database, account identity, or exactly-one-row result, stop without
+changing the account.
 
 This foundation defines no sports-domain tables: domain entities, constraints,
 personal-data classification, and retention require approved feature

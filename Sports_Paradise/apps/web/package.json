@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite",
+    "dev": "node -e \"console.error('Standalone Vite development is disabled because it bypasses Fastify authorization. Run npm run dev from the project root.'); process.exit(1);\"",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

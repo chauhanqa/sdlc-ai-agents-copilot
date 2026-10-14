@@ -1,6 +1,7 @@
 import type { Pool } from "pg";
 
 export type AccountStatus = "active" | "deactivated";
+export type AccountRole = "user" | "admin";
 
 export interface PublicAccount {
   id: string;
@@ -12,6 +13,12 @@ export interface PublicAccount {
 export interface AccountCredentials extends PublicAccount {
   passwordHash: string;
   status: AccountStatus;
+  role: AccountRole;
+}
+
+export interface AccountRecord extends PublicAccount {
+  status: AccountStatus;
+  role: AccountRole;
 }
 
 export interface NewAccount {
@@ -23,7 +30,11 @@ export interface NewAccount {
 
 export interface AccountRepository {
   createAccount(account: NewAccount): Promise<PublicAccount | null>;
+  findAccountById(id: string): Promise<AccountRecord | null>;
   findCredentialsByEmail(email: string): Promise<AccountCredentials | null>;
+  deactivateAccount(
+    id: string,
+  ): Promise<"deactivated" | "already_deactivated" | "not_found">;
   isLoginBlocked(loginKeyHash: string): Promise<boolean>;
   recordFailedLogin(loginKeyHash: string): Promise<boolean>;
   clearFailedLogins(loginKeyHash: string): Promise<void>;
@@ -39,6 +50,7 @@ interface PublicAccountRow {
 interface AccountRow extends PublicAccountRow {
   password_hash: string;
   account_status: AccountStatus;
+  account_role: AccountRole;
 }
 
 function toPublicAccount(row: PublicAccountRow): PublicAccount {
@@ -82,9 +94,28 @@ export function createPostgresAccountRepository(pool: Pool): AccountRepository {
       }
     },
 
+    async findAccountById(id) {
+      const result = await pool.query<AccountRow>(
+        `SELECT id, email, first_name, last_name, account_status, account_role
+         FROM users
+         WHERE id = $1`,
+        [id],
+      );
+      const row = result.rows[0];
+      if (!row) {
+        return null;
+      }
+
+      return {
+        ...toPublicAccount(row),
+        status: row.account_status,
+        role: row.account_role,
+      };
+    },
+
     async findCredentialsByEmail(email) {
       const result = await pool.query<AccountRow>(
-        `SELECT id, email, first_name, last_name, password_hash, account_status
+        `SELECT id, email, first_name, last_name, password_hash, account_status, account_role
          FROM users
          WHERE email = $1`,
         [email],
@@ -98,7 +129,44 @@ export function createPostgresAccountRepository(pool: Pool): AccountRepository {
         ...toPublicAccount(row),
         passwordHash: row.password_hash,
         status: row.account_status,
+        role: row.account_role,
       };
+    },
+
+    async deactivateAccount(id) {
+      const result = await pool.query<{ account_status: AccountStatus }>(
+        `WITH updated AS (
+           UPDATE users
+           SET account_status = 'deactivated',
+               deactivated_at = COALESCE(deactivated_at, NOW()),
+               updated_at = NOW()
+           WHERE id = $1 AND account_status = 'active'
+           RETURNING id, account_status
+         ),
+         invalidated AS (
+           UPDATE auth_sessions
+           SET revoked_at = COALESCE(revoked_at, NOW())
+           WHERE user_id = $1 AND revoked_at IS NULL
+           RETURNING 1
+         )
+         SELECT account_status FROM updated`,
+        [id],
+      );
+
+      if (result.rowCount === 1) {
+        return "deactivated";
+      }
+
+      const current = await pool.query<{ account_status: AccountStatus }>(
+        `SELECT account_status FROM users WHERE id = $1`,
+        [id],
+      );
+      if (current.rowCount !== 1) {
+        return "not_found";
+      }
+      return current.rows[0].account_status === "deactivated"
+        ? "already_deactivated"
+        : "not_found";
     },
 
     async isLoginBlocked(loginKeyHash) {

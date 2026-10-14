@@ -1,7 +1,11 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
+import middie from "@fastify/middie";
+import fastifyStatic from "@fastify/static";
 import type { Pool } from "pg";
+import { createServer as createViteDevServer } from "vite";
+import { resolveFrontendRoots } from "./frontend-roots.js";
 import { checkDatabaseConnection, createDatabasePool } from "./db/pool.js";
 import { redactConnectionString, type AppConfig } from "./config.js";
 import { clearSessionCookie, setSessionCookie } from "./auth/cookies.js";
@@ -95,6 +99,161 @@ const echoResponseSchema = {
     },
   },
 } as const;
+
+const PUBLIC_PAGE_PATHS = new Set(["/login", "/signup"]);
+const PUBLIC_STATIC_ASSET_PATHS = new Set([
+  "/favicon.ico",
+  "/robots.txt",
+  "/manifest.webmanifest",
+]);
+const PUBLIC_HEALTH_PATH = "/health";
+const PUBLIC_POST_PATHS = new Set(["/api/auth/login", "/api/auth/signup"]);
+// This pattern routes frontend files through the Vite middleware; it does not
+// grant public access. Only the exact paths in the allow-lists above bypass auth.
+const STATIC_FILE_REQUEST_PATTERN =
+  /^(?:\/.*\.(?:js|css|png|jpg|jpeg|gif|svg|ico|webp|woff2?|ttf|map)|\/assets\/|\/favicon\.ico|\/robots\.txt|\/manifest\.webmanifest)$/i;
+const PROTECTED_API_PATHS = new Set(["/ready", "/openapi.json"]);
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    switch (character) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
+}
+
+function buildAuthDocument(mode: "login" | "signup", notice?: string): string {
+  const action = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
+  const title = mode === "login" ? "Login" : "Create account";
+  const submitLabel = mode === "login" ? "Login" : "Create account";
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sports_Paradise | ${title}</title>
+    <style>
+      body { font-family: sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
+      main { max-width: 420px; margin: 5rem auto; padding: 2rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08); }
+      h1 { margin-top: 0; }
+      form { display: flex; flex-direction: column; gap: 0.85rem; }
+      label { font-weight: 600; display: flex; flex-direction: column; gap: 0.35rem; }
+      input { padding: 0.65rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
+      input[type="password"] { font-family: sans-serif; }
+      button { margin-top: 0.5rem; padding: 0.75rem 1rem; border: none; border-radius: 8px; background: #2563eb; color: white; font-weight: 600; cursor: pointer; }
+      a { color: #2563eb; }
+      .switch { margin-top: 1rem; font-size: 0.95rem; }
+      .notice { padding: 0.75rem; border-radius: 8px; background: #eff6ff; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>${title}</h1>
+      ${notice ? `<p class="notice" role="alert">${escapeHtml(notice)}</p>` : ""}
+      <form method="post" action="${action}" accept-charset="utf-8">
+        ${
+          mode === "signup"
+            ? `
+          <label>
+            First name
+            <input name="firstName" type="text" required maxlength="100" autocomplete="given-name" />
+          </label>
+          <label>
+            Last name
+            <input name="lastName" type="text" required maxlength="100" autocomplete="family-name" />
+          </label>
+          `
+            : ""
+        }
+        <label>
+          Email address
+          <input name="email" type="email" required maxlength="254" autocomplete="username" />
+        </label>
+        <label>
+          Password
+          <input name="password" type="password" required minlength="8" maxlength="1024" autocomplete="current-password" />
+        </label>
+        <button type="submit">${submitLabel}</button>
+      </form>
+      <div class="switch">
+        ${
+          mode === "login"
+            ? '<a href="/signup">Create an account</a>'
+            : '<a href="/login">Already have an account? Log in</a>'
+        }
+      </div>
+    </main>
+  </body>
+</html>`;
+}
+
+function isHtmlFormRequest(request: FastifyRequest): boolean {
+  return request.headers.accept?.includes("text/html") ?? false;
+}
+
+function sendAuthFormNotice(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  mode: "login" | "signup",
+  statusCode: number,
+  notice: string,
+): FastifyReply | null {
+  if (!isHtmlFormRequest(request)) {
+    return null;
+  }
+  return reply
+    .code(statusCode)
+    .header("cache-control", "no-store")
+    .type("text/html; charset=utf-8")
+    .send(buildAuthDocument(mode, notice));
+}
+
+function isPublicRoute(method: string, pathname: string): boolean {
+  if (method === "GET" || method === "HEAD") {
+    return (
+      pathname === PUBLIC_HEALTH_PATH ||
+      PUBLIC_PAGE_PATHS.has(pathname) ||
+      PUBLIC_STATIC_ASSET_PATHS.has(pathname)
+    );
+  }
+  return method === "POST" && PUBLIC_POST_PATHS.has(pathname);
+}
+
+function isProtectedPageRequest(
+  pathname: string,
+  acceptHeader: string | undefined,
+): boolean {
+  return (
+    !isPublicRoute("GET", pathname) &&
+    !PROTECTED_API_PATHS.has(pathname) &&
+    !pathname.startsWith("/api/") &&
+    (typeof acceptHeader === "string"
+      ? acceptHeader.includes("text/html")
+      : false)
+  );
+}
+
+function sendAuthenticationDocument(
+  reply: FastifyReply,
+  mode: "login" | "signup",
+  statusCode: number,
+): FastifyReply {
+  return reply
+    .code(statusCode)
+    .header("cache-control", "no-store")
+    .type("text/html; charset=utf-8")
+    .send(buildAuthDocument(mode));
+}
 
 const openApiSpec = {
   openapi: "3.0.3",
@@ -219,6 +378,9 @@ const openApiSpec = {
             "application/json": {
               schema: signupBodySchema,
             },
+            "application/x-www-form-urlencoded": {
+              schema: signupBodySchema,
+            },
           },
         },
         responses: {
@@ -235,6 +397,9 @@ const openApiSpec = {
           required: true,
           content: {
             "application/json": {
+              schema: loginBodySchema,
+            },
+            "application/x-www-form-urlencoded": {
               schema: loginBodySchema,
             },
           },
@@ -264,6 +429,45 @@ export function buildApiApp(
       },
     },
   });
+  app.addContentTypeParser(
+    "application/x-www-form-urlencoded",
+    { parseAs: "string" },
+    (_request, body, done) => {
+      const fields: Record<string, string> = Object.create(null) as Record<
+        string,
+        string
+      >;
+      const formBody = typeof body === "string" ? body : body.toString("utf8");
+      for (const [name, value] of new URLSearchParams(formBody)) {
+        if (Object.prototype.hasOwnProperty.call(fields, name)) {
+          done(
+            Object.assign(new Error("Duplicate form field."), {
+              statusCode: 400,
+            }),
+          );
+          return;
+        }
+        fields[name] = value;
+      }
+      done(null, fields);
+    },
+  );
+
+  const { webRoot, distRoot } = resolveFrontendRoots();
+  const frontendDevServer =
+    config.environment === "development"
+      ? createViteDevServer({
+          root: webRoot,
+          server: {
+            host: "127.0.0.1",
+            port: 5173,
+            hmr: { port: 5173, host: "127.0.0.1" },
+          },
+          preview: { host: "127.0.0.1", port: 4173 },
+          logLevel: "error",
+          appType: "spa",
+        })
+      : null;
 
   const databasePool = createDatabasePool(config.databaseUrl);
   const checkDatabase =
@@ -284,6 +488,86 @@ export function buildApiApp(
   );
 
   app.register(cookie);
+  if (config.environment === "development") {
+    app.register(middie);
+    if (frontendDevServer) {
+      app.after(async () => {
+        const viteServer = await frontendDevServer;
+        app.use((request, response, next) => {
+          const pathname = new URL(request.url ?? "/", "http://localhost")
+            .pathname;
+          const isFrontendRequest =
+            pathname === "/" ||
+            pathname.startsWith("/@") ||
+            pathname.startsWith("/src/") ||
+            STATIC_FILE_REQUEST_PATTERN.test(pathname);
+
+          if (isFrontendRequest) {
+            if (isPublicRoute(request.method ?? "GET", pathname)) {
+              viteServer.middlewares(request, response, next);
+              return;
+            }
+
+            const cookies = app.parseCookie(
+              typeof request.headers.cookie === "string"
+                ? request.headers.cookie
+                : "",
+            );
+            void sessionService
+              .authenticate(cookies[SESSION_COOKIE_NAME])
+              .then((session) => {
+                if (!session) {
+                  if (
+                    isProtectedPageRequest(pathname, request.headers.accept)
+                  ) {
+                    response.writeHead(401, {
+                      "cache-control": "no-store",
+                      "content-type": "text/html; charset=utf-8",
+                    });
+                    response.end(buildAuthDocument("login"));
+                    return;
+                  }
+
+                  response.writeHead(401, {
+                    "cache-control": "no-store",
+                    "content-type": "application/json; charset=utf-8",
+                  });
+                  response.end(
+                    JSON.stringify({ error: "Authentication required." }),
+                  );
+                  return;
+                }
+
+                viteServer.middlewares(request, response, next);
+              })
+              .catch(() => {
+                if (!response.headersSent) {
+                  response.writeHead(503, {
+                    "cache-control": "no-store",
+                    "content-type": "application/json; charset=utf-8",
+                  });
+                  response.end(
+                    JSON.stringify({
+                      error: "Authentication service unavailable.",
+                    }),
+                  );
+                }
+              });
+            return;
+          }
+
+          next();
+        });
+      });
+    }
+  } else {
+    app.register(fastifyStatic, {
+      root: distRoot,
+      prefix: "/",
+      wildcard: false,
+      serve: config.environment === "production",
+    });
+  }
   app.decorateRequest("authSession", null);
   app.addHook("onRequest", async (request, reply) => {
     const origin = request.headers.origin;
@@ -300,13 +584,37 @@ export function buildApiApp(
     ) {
       return reply.code(403).send({ error: "Origin not allowed." });
     }
+
+    const pathname = new URL(request.raw.url ?? "/", "http://localhost")
+      .pathname;
+    if (isPublicRoute(request.method, pathname)) {
+      return;
+    }
+
+    const session = await sessionService.authenticate(
+      request.cookies[SESSION_COOKIE_NAME],
+    );
+    request.authSession = session;
+
+    if (session) {
+      return;
+    }
+
+    if (isProtectedPageRequest(pathname, request.headers.accept)) {
+      return sendAuthenticationDocument(reply, "login", 401);
+    }
+
+    return reply.code(401).send({ error: "Authentication required." });
   });
 
   app.addHook("onClose", async () => {
+    if (frontendDevServer) {
+      await (await frontendDevServer).close();
+    }
     await databasePool.end();
   });
 
-  app.setErrorHandler((error, _request, reply) => {
+  app.setErrorHandler((error, request, reply) => {
     const typedError = error as Error & {
       statusCode?: number;
       validation?: unknown[];
@@ -316,6 +624,23 @@ export function buildApiApp(
       typeof typedError.statusCode === "number" && typedError.statusCode > 0
         ? typedError.statusCode
         : 500;
+    const pathname = new URL(request.raw.url ?? "/", "http://localhost")
+      .pathname;
+    const authMode =
+      pathname === "/api/auth/login"
+        ? "login"
+        : pathname === "/api/auth/signup"
+          ? "signup"
+          : null;
+    if (authMode && responseCode === 400 && isHtmlFormRequest(request)) {
+      return sendAuthFormNotice(
+        request,
+        reply,
+        authMode,
+        responseCode,
+        "Please complete the required fields with valid information and try again.",
+      );
+    }
     const message = redactConnectionString(
       typedError.message || "Internal Server Error",
     );
@@ -337,6 +662,20 @@ export function buildApiApp(
     database: "unknown",
   }));
 
+  if (config.environment !== "production") {
+    app.get("/", async (_request, reply) => {
+      return reply.sendFile("index.html", webRoot, { maxAge: 0 });
+    });
+  }
+
+  app.get("/login", async (_request, reply) => {
+    return sendAuthenticationDocument(reply, "login", 200);
+  });
+
+  app.get("/signup", async (_request, reply) => {
+    return sendAuthenticationDocument(reply, "signup", 200);
+  });
+
   app.post(
     "/api/auth/signup",
     { schema: { body: signupBodySchema } },
@@ -351,13 +690,43 @@ export function buildApiApp(
           },
         );
         if (result.type === "duplicate") {
+          const formResponse = sendAuthFormNotice(
+            request,
+            reply,
+            "signup",
+            409,
+            "An account with that email address already exists.",
+          );
+          if (formResponse) {
+            return formResponse;
+          }
           return reply.code(409).send({
             error: "An account with that email address already exists.",
           });
         }
+        const formResponse = sendAuthFormNotice(
+          request,
+          reply,
+          "signup",
+          201,
+          "Your account was created. You can now log in.",
+        );
+        if (formResponse) {
+          return formResponse;
+        }
         return reply.code(201).send({ user: result.account });
       } catch (error) {
         if (error instanceof AuthInputError) {
+          const formResponse = sendAuthFormNotice(
+            request,
+            reply,
+            "signup",
+            400,
+            error.message,
+          );
+          if (formResponse) {
+            return formResponse;
+          }
           return reply.code(400).send({ error: error.message });
         }
         throw error;
@@ -374,23 +743,70 @@ export function buildApiApp(
           request.body as { email: string; password: string },
         );
         if (result.type === "invalid-credentials") {
+          const formResponse = sendAuthFormNotice(
+            request,
+            reply,
+            "login",
+            401,
+            "Invalid email or password.",
+          );
+          if (formResponse) {
+            return formResponse;
+          }
           return reply.code(401).send({ error: "Invalid email or password." });
         }
         if (result.type === "deactivated") {
+          const formResponse = sendAuthFormNotice(
+            request,
+            reply,
+            "login",
+            403,
+            "Your account has been deactivated. Please contact support.",
+          );
+          if (formResponse) {
+            return formResponse;
+          }
           return reply.code(403).send({
             error: "Your account has been deactivated. Please contact support.",
           });
         }
         if (result.type === "throttled") {
+          const formResponse = sendAuthFormNotice(
+            request,
+            reply,
+            "login",
+            429,
+            "Too many login attempts. Try again later.",
+          );
+          if (formResponse) {
+            return formResponse;
+          }
           return reply.code(429).send({
             error: "Too many login attempts. Try again later.",
           });
         }
 
         setSessionCookie(reply, result.token, config.secureCookies);
+        if (isHtmlFormRequest(request)) {
+          return reply
+            .code(303)
+            .header("cache-control", "no-store")
+            .header("location", "/")
+            .send();
+        }
         return reply.code(200).send({ user: result.account });
       } catch (error) {
         if (error instanceof AuthInputError) {
+          const formResponse = sendAuthFormNotice(
+            request,
+            reply,
+            "login",
+            400,
+            error.message,
+          );
+          if (formResponse) {
+            return formResponse;
+          }
           return reply.code(400).send({ error: error.message });
         }
         throw error;
@@ -424,6 +840,50 @@ export function buildApiApp(
       return reply.code(204).send();
     },
   );
+
+  app.post("/api/admin/users/:id/deactivate", async (request, reply) => {
+    const session = await sessionService.authenticate(
+      request.cookies[SESSION_COOKIE_NAME],
+    );
+    if (!session) {
+      return reply.code(401).send({ error: "Authentication required." });
+    }
+
+    const actor = await accountRepository.findAccountById(session.userId);
+    if (!actor || actor.role !== "admin") {
+      return reply.code(403).send({ error: "Forbidden." });
+    }
+
+    const userId = String((request.params as { id?: string }).id ?? "");
+    if (!userId) {
+      return reply.code(400).send({ error: "A user id is required." });
+    }
+
+    const target = await accountRepository.findAccountById(userId);
+    if (!target) {
+      return reply.code(404).send({ error: "User not found." });
+    }
+
+    const status = await accountRepository.deactivateAccount(userId);
+    if (status === "already_deactivated") {
+      return reply
+        .code(409)
+        .send({ error: "User account is already deactivated." });
+    }
+    if (status === "not_found") {
+      return reply.code(404).send({ error: "User not found." });
+    }
+
+    return reply.code(200).send({
+      user: {
+        id: target.id,
+        email: target.email,
+        firstName: target.firstName,
+        lastName: target.lastName,
+        status: "deactivated" as const,
+      },
+    });
+  });
 
   app.get("/ready", async (_request, reply) => {
     try {

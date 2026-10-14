@@ -208,7 +208,17 @@ describe("JWT session lifecycle", () => {
 
 describe("session cookie and logout", () => {
   it("sets and clears a scoped HttpOnly SameSite=Lax cookie", async () => {
-    const app = buildApiApp(testConfig({ secureCookies: true }));
+    const repository = new MemorySessionRepository();
+    const service = createSessionService(
+      repository,
+      signingKey,
+      () => fixedNow,
+    );
+    const issued = await service.issue(userId);
+    const app = buildApiApp(testConfig({ secureCookies: true }), {
+      sessionRepository: repository,
+      sessionService: service,
+    });
     app.post("/test/session-cookie", async (_request, reply) => {
       setSessionCookie(reply, "sample.jwt.token", true);
       return reply.code(204).send();
@@ -218,27 +228,45 @@ describe("session cookie and logout", () => {
       return reply.code(204).send();
     });
 
-    const setResponse = await app.inject({
-      method: "POST",
-      url: "/test/session-cookie",
-    });
-    const setCookie = setResponse.headers["set-cookie"];
-    expect(setCookie).toContain(`${SESSION_COOKIE_NAME}=sample.jwt.token`);
-    expect(setCookie).toContain("HttpOnly");
-    expect(setCookie).toContain("SameSite=Lax");
-    expect(setCookie).toContain("Path=/");
-    expect(setCookie).toContain("Max-Age=86400");
-    expect(setCookie).toContain("Secure");
+    try {
+      for (const url of ["/test/session-cookie", "/test/clear-cookie"]) {
+        const denied = await app.inject({ method: "POST", url });
+        expect(denied.statusCode, url).toBe(401);
+        expect(denied.json(), url).toEqual({
+          error: "Authentication required.",
+        });
+      }
 
-    const clearResponse = await app.inject({
-      method: "POST",
-      url: "/test/clear-cookie",
-    });
-    const clearedCookie = clearResponse.headers["set-cookie"];
-    expect(clearedCookie).toContain(`${SESSION_COOKIE_NAME}=`);
-    expect(clearedCookie).toContain("Max-Age=0");
-    expect(clearedCookie).toContain("HttpOnly");
-    await app.close();
+      const headers = {
+        cookie: `${SESSION_COOKIE_NAME}=${issued.token}`,
+      };
+      const setResponse = await app.inject({
+        method: "POST",
+        url: "/test/session-cookie",
+        headers,
+      });
+      expect(setResponse.statusCode).toBe(204);
+      const setCookie = setResponse.headers["set-cookie"];
+      expect(setCookie).toContain(`${SESSION_COOKIE_NAME}=sample.jwt.token`);
+      expect(setCookie).toContain("HttpOnly");
+      expect(setCookie).toContain("SameSite=Lax");
+      expect(setCookie).toContain("Path=/");
+      expect(setCookie).toContain("Max-Age=86400");
+      expect(setCookie).toContain("Secure");
+
+      const clearResponse = await app.inject({
+        method: "POST",
+        url: "/test/clear-cookie",
+        headers,
+      });
+      expect(clearResponse.statusCode).toBe(204);
+      const clearedCookie = clearResponse.headers["set-cookie"];
+      expect(clearedCookie).toContain(`${SESSION_COOKIE_NAME}=`);
+      expect(clearedCookie).toContain("Max-Age=0");
+      expect(clearedCookie).toContain("HttpOnly");
+    } finally {
+      await app.close();
+    }
   });
 
   it("logout revokes only the current session and denies missing authentication", async () => {
@@ -250,7 +278,10 @@ describe("session cookie and logout", () => {
     );
     const first = await service.issue(userId);
     const second = await service.issue(userId);
-    const app = buildApiApp(testConfig(), { sessionRepository: repository });
+    const app = buildApiApp(testConfig(), {
+      sessionRepository: repository,
+      sessionService: service,
+    });
 
     const denied = await app.inject({
       method: "POST",

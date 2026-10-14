@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "Running Agentic SDLC pre-push validation..."
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+
+if [ -z "$REPO_ROOT" ]; then
+    echo "ERROR: Unable to determine Git repository root."
+    exit 1
+fi
+
+cd "$REPO_ROOT"
+
+VALIDATOR=".github/skills/agent-contract-validator/validate_agents.py"
+
+if [ ! -f "$VALIDATOR" ]; then
+    echo "ERROR: Agent Contract Validator not found:"
+    echo "  $VALIDATOR"
+    exit 1
+fi
+
+echo ""
+echo "Repository:"
+echo "  $REPO_ROOT"
+
+echo ""
+echo "Branch:"
+git branch --show-current
+
+echo ""
+echo "Running Agent Contract Validator..."
+echo ""
+
+PYTHON_BIN="$(command -v python3 || command -v python || true)"
+
+if [ -z "$PYTHON_BIN" ]; then
+    echo "ERROR: Python 3 is required to run the Agent Contract Validator."
+    exit 1
+fi
+
+"$PYTHON_BIN" "$VALIDATOR"
+
+echo ""
+echo "Agentic SDLC pre-push validation passed."
