@@ -5,19 +5,26 @@
 - Project Name: Sports_Paradise
 - Project Mode: EXISTING_PROJECT
 - Project Root: `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise`
-- Verification Cycle: 2
+- Verification Cycle: 3
 - Branch: `copilot/phase1`
-- Base Revision: `1604a2c8e52be42dbb4a4886a41e9d2faf9bbfa1`
-- Verified Revision (candidate under test): `uncommitted Sports_Paradise working-tree candidate based on HEAD 1604a2c8e52be42dbb4a4886a41e9d2faf9bbfa1`; 16 modified tracked project paths are unstaged, there are no staged project paths, and `apps/api/src/frontend-roots.ts` is the untracked project implementation path. This implementation candidate matches the Code Review baseline. This artifact update is Verification-owned and is not an implementation change.
-- Working Tree State: `DIRTY`. Repository-wide snapshot: 16 modified tracked paths under `Sports_Paradise` (all unstaged), 1 staged addition `.githooks/commit-msg` outside PROJECT_ROOT, and 3 untracked paths outside PROJECT_ROOT (`.githooks/pre-commit`, `.githooks/pre-push`, `scripts/setup-hooks.sh`), plus the untracked project source `Sports_Paradise/apps/api/src/frontend-roots.ts`. The root-level staged/untracked work is preserved and excluded from the Sports_Paradise candidate; Verification did not stage or modify it. No human changes were discarded.
-- Code Review Reviewed Revision: `uncommitted working-tree candidate based on HEAD 1604a2c8e52be42dbb4a4886a41e9d2faf9bbfa1`
-- Requirements Baseline: `docs/sdlc/requirements.md`; SP-1 foundation plus SP-2 extension; `APPROVED`; baseline commit `95a3038aa0eec16e313224897b624bcee60413d0`
+- Base Revision: `Not separately established; Code Review records HEAD d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd as its review base.`
+- Verified Revision (candidate evaluated): `uncommitted Sports_Paradise working-tree candidate based on HEAD d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd`; implementation paths are `apps/api/src/app.ts`, `apps/web/vite.config.ts`, and untracked `apps/web/src/vite-standalone.test.ts`. This is the complete dirty candidate reviewed in Code Review Cycle 3, not HEAD alone.
+- Working Tree State: `DIRTY`; no staged changes. Project changes: 4 modified tracked files (`apps/api/src/app.ts`, `apps/web/vite.config.ts`, `docs/sdlc/code-review.md`, `docs/sdlc/implementation-log.md`) and 1 untracked persistent test (`apps/web/src/vite-standalone.test.ts`). The two SDLC files are their owners' current candidate evidence and are not implementation source. Verification has not staged, committed, or altered implementation, tests, or another specialist's artifact.
+- Code Review Reviewed Revision: `uncommitted working-tree candidate based on HEAD d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd`
+- Requirements Baseline: `docs/sdlc/requirements.md`; approved SP-1 foundation plus SP-2 extension; `APPROVED`
 - Architecture Baseline: `docs/sdlc/architecture.md`; Version 2.2; `DESIGN_REVIEW_APPROVED`
 - Design Review Baseline: `docs/sdlc/design-review.md`; Cycle 4; `DESIGN_REVIEW_APPROVED`; DR-001 is recorded resolved there
 - Implementation Plan Baseline: `docs/sdlc/impl-plan.md`; Planning Version 2.0; `READY_FOR_IMPLEMENTATION`; Approval `APPROVED`
 - Implementation Baseline: `docs/sdlc/implementation-log.md`; Overall Implementation Status `READY_FOR_CODE_REVIEW`
-- Code Review Baseline: `docs/sdlc/code-review.md`; Review Cycle 2; `CODE_REVIEW_APPROVED`; CR-005 and CR-006 are recorded resolved there
+- Code Review Baseline: `docs/sdlc/code-review.md`; Review Cycle 3; `CODE_REVIEW_APPROVED`; CR-005, CR-006, and CR-007 are recorded resolved
 - Verification Status: `REMEDIATION_REQUIRED`
+
+**Current-cycle boundary:** Sections 2–24 below preserve Verification Cycle 2
+evidence as historical record. They described the earlier candidate based on
+HEAD `1604a2c8e52be42dbb4a4886a41e9d2faf9bbfa1` and are superseded where
+Cycle 3 results below differ. Section 25 is the authoritative Cycle 3
+re-verification and current Step 7 decision. The Cycle 2 findings and failed
+evidence have not been deleted.
 
 The project candidate remains dirty as reviewed. Verification commands did not modify tracked implementation or persistent test code. Build output is ignored. Local API and web processes were stopped gracefully after live checks; the user-provided isolated `sports_paradise_verify` PostgreSQL container was left running and was not recreated or stopped.
 
@@ -643,3 +650,417 @@ Required next sequence:
    resolution.
 
 Step 8 is not authorized. No Pull Request was created.
+
+## 25. Verification Cycle 3 — Current Candidate Re-verification
+
+### 25.1 Objective, Environment, and Scope
+
+This cycle independently verifies the current Code-Review-approved dirty
+candidate and reassesses the open Cycle 2 findings. It does not rely on
+Implementation or Code Review claims as proof, does not change implementation,
+persistent tests, or any upstream specialist artifact, and does not create a
+Pull Request.
+
+- Candidate: branch `copilot/phase1`, HEAD
+  `d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd`, plus the reviewed unstaged and
+  untracked changes listed in Metadata. The implementation candidate exactly
+  matches the candidate described in Code Review Cycle 3, Section 33.
+- Code Review: Cycle 3, `CODE_REVIEW_APPROVED`; Reviewed Revision is the same
+  dirty working-tree candidate based on HEAD above. CR-007 is independently
+  `RESOLVED`; CR-005 and CR-006 remain `RESOLVED`.
+- Runtime: macOS, Node.js `v24.21.0`, Docker Engine `29.8.2`; installed
+  project workspace dependencies. No secrets or environment values are
+  recorded.
+- The live local API process was identified by its command and working
+  directory as this Sports_Paradise project. Its start time preceded the
+  current verification by minutes, and the candidate source files' recorded
+  modification times preceded that process start. The live smoke therefore
+  exercised this candidate, not an unrelated process.
+- Database migration/provisioning and administrator lifecycle checks used
+  uniquely named disposable Docker Compose projects, synthetic credentials,
+  and cleanup of only those verification-owned projects/volumes. The existing
+  `sports_paradise_verify` configuration/database was not used or modified.
+- Required scope: FR-001–FR-013; BR-001–BR-008; NFR-MNT-001, NFR-REL-001,
+  NFR-SEC-001–NFR-SEC-004, NFR-COMP-001; AC-001–AC-016; TASK-001–TASK-015;
+  CMP-001–CMP-006; AD-001–AD-010; DR-001; CR-005–CR-007; Cycle 2
+  VR-001–VR-006; required project and lifecycle documentation.
+
+### 25.2 Verification Case Matrix
+
+The permanent Cycle 1/2 VC identities are retained for their original
+verification purposes. VC-019 and VC-020 extend coverage without renumbering
+existing cases.
+
+| VC | Requirement / AC | Category | Verification Method | Expected | Result | Evidence |
+|---|---|---|---|---|---|---|
+| VC-001 | FR-001–FR-013; BR-001–BR-008; AC-001–AC-016 | Unit Tests | `npm --prefix Sports_Paradise test` | All workspace unit suites pass | PASS | API 4 files / 45 tests; web 2 files / 6 tests; 51 passed, 0 failed |
+| VC-002 | FR-004; NFR-MNT-001 | Lint / Static Analysis | `npm --prefix Sports_Paradise run lint` | Project ESLint validation passes | PASS | Exit 0 |
+| VC-003 | FR-005; NFR-REL-001; AC-005, AC-010, AC-014 | Local Integration / Smoke | `API_BASE_URL=http://127.0.0.1:3000 npm --prefix Sports_Paradise run integration:smoke` | Health, protected API/page behavior, public login, and frontend delivery assertions match the approved contract | FAIL | Health, protected readiness/OpenAPI/echo, public login, and protected dashboard checks reached the final frontend assertion; unauthenticated `GET /` returned expected HTTP 401 while the smoke script expected a successful shell response |
+| VC-004 | NFR-COMP-001 | Typecheck | `npm --prefix Sports_Paradise run typecheck` | All workspace typechecks pass | PASS | API, web, and contracts TypeScript checks completed; exit 0 |
+| VC-005 | NFR-SEC-001–NFR-SEC-004; AC-008, AC-009, AC-013, AC-016 | Security / Authentication | Full API suite; isolated migration/auth repository tests; isolated live admin scenario | Password/session, error privacy, lockout, deactivation, and protected-access controls behave as approved | PASS | Unit and database integration suites passed; live isolated scenario verified login, deactivation, session revocation, and denial |
+| VC-006 | CR-005, CR-006; DR-001 | Regression | Full API/web suites and production build | Previously resolved review controls remain effective | PASS | Route-boundary tests, frontend-root/build checks passed |
+| VC-007 | FR-004; NFR-MNT-001; AC-004 | Format Check | `npm --prefix Sports_Paradise run format:check` | Complete project Prettier check passes | FAIL | Exit 1; Prettier identifies `apps/web/src/App.test.tsx`, `apps/web/src/App.tsx`, and `scripts/local-dev.mjs`; no formatter write was run |
+| VC-008 | FR-001–FR-003 | Production Build | `npm --prefix Sports_Paradise run build` | All required workspace builds/compilation succeed | PASS | API/contracts typechecks and Vite production build completed; 16 modules transformed; exit 0 |
+| VC-009 | FR-003; BR-001, BR-007; AC-003, AC-012, AC-013, AC-015 | Migration / Database | `npm --prefix Sports_Paradise run test:db:migrations` | Additive schema, constraints, migration rollback, existing-data preservation, and repository behavior pass | PASS | Disposable DB migration up/down, schema constraints, session repository, and authentication repository checks passed |
+| VC-010 | FR-003, FR-005; NFR-REL-001, NFR-SEC-001; AC-003, AC-005 | Database Provisioning | `npm --prefix Sports_Paradise run test:db:provisioning` | Safe provisioning, role login/rotation, fail-fast behavior, and secret-safe diagnostics pass | PASS | Synthetic credentials; isolated projects cleaned; check command exited 0 |
+| VC-011 | FR-008, FR-009, FR-011–FR-013; BR-005, BR-007, BR-008 | Authentication Repository Integration | `npm --prefix Sports_Paradise run test:db:migrations` | Account uniqueness, password hashing, cooldown, session, and deactivated-account persistence behave correctly | PASS | Integrated migration script executed session/auth repository checks successfully |
+| VC-012 | Dependency safety | Dependency Audit | `npm --prefix Sports_Paradise audit` | No unaccepted dependency vulnerabilities | PASS | Exit 0; 0 vulnerabilities |
+| VC-013 | Final output documents; TASK-013, TASK-015; AD-007 | Document Quality | Inspect documents, commands, endpoint, traceability, and current implementation | Required database/admin and development guidance is complete and accurate | PASS | `docs/database.md` contains local-only bootstrap/deactivation procedure; commands and endpoint match current scripts/routes |
+| VC-014 | FR-010; BR-006; AC-010, AC-014; AD-008, AD-010 | Authorization Boundary | API suite plus local smoke protected-route probes | Only approved public endpoints/assets bypass authorization | PASS | Suite denies unauthenticated `/ready`, `/openapi.json`, `/api/echo`, unknown paths and near-matches; smoke reached later check, so prior route assertions succeeded |
+| VC-015 | FR-006–FR-009, FR-012; AC-006, AC-008, AC-009, AC-012 | Authentication Acceptance | API native-form tests; disposable live signup/login scenario | Forms accept form encoding and login/signup outcomes, cookies, and redirects conform | PASS | API tests cover missing/duplicate/invalid/deactivated/success cases; live isolated admin/member signup and login returned expected outcomes |
+| VC-016 | FR-010; BR-006; AC-010, AC-014 | Security Route Regression | API protected-route suite | Protected operations return HTTP 401 and exact JSON; public exceptions stay exact | PASS | API suite passed protected route and near-match cases; live smoke observed protected page behavior |
+| VC-017 | FR-013; BR-008; AC-015; TASK-013, TASK-015; AD-007 | Administrator Bootstrap / E2E | Temporary ephemeral harness against isolated migrated PostgreSQL and actual Fastify app | Operator promotion is controlled; only admin deactivates; sessions are revoked and disabled login gives specified message | PASS | Signup, exactly-one-row promotion, admin/member login, deactivation, persisted session revocation, protected-access denial, and exact disabled-account message all passed |
+| VC-018 | Verification report | Document Quality | Review report completeness, accuracy, traceability, formatting, secret safety | This report accurately records Cycle 3 and all outcomes | NOT_VERIFIED | Final formatter/document-quality validation is pending this report update; see VC-021 below |
+| VC-019 | FR-010; AC-010; TASK-013; CR-007; DR-001 | Standalone Vite Security Regression | `npm --prefix Sports_Paradise run test --workspace @sports-paradise/web -- src/vite-standalone.test.ts` | Standalone Vite does not deliver protected SPA pages; Fastify embedded Vite remains guarded | PASS | Ephemeral Vite server returned 403/no-store and no SPA entry for `/dashboard` with HTML and wildcard Accept |
+| VC-020 | FR-007; AC-007; TASK-010, TASK-011 | Browser Native Constraint Validation | Existing test/runtime inventory and rendered HTML/API checks | Missing required login input is blocked by browser with user-visible validation before an authentication request | NOT_VERIFIED | Required controls and server-side missing-field rejection are tested, but no browser executable or browser automation package is installed; no real browser interaction was executed |
+| VC-021 | Verification report | Document Quality | Prettier check and manual report checklist after report update | `verification.md` is complete, accurate, readable, formatted, traceable, and safe | PENDING | To be executed after the Cycle 3 report text is written; pending is not a Verification result |
+
+VC-021 is a report-writing work item, not yet an executed result. It will be
+replaced with its observed PASS/FAIL outcome after final validation. It is not
+eligible to support Verification approval while pending.
+
+### 25.3 Unit, Integration, Build, and Static Results
+
+**Unit suites — PASS**
+
+- Command: `npm --prefix Sports_Paradise test`
+- API: 4 test files, 45 passed.
+- Web: 2 test files, 6 passed.
+- Total: 51 passed, 0 failed.
+- Targeted reruns:
+  - `npm --prefix Sports_Paradise run test --workspace @sports-paradise/web -- src/vite-standalone.test.ts` — PASS; 1 test passed.
+  - `npm --prefix Sports_Paradise run test --workspace @sports-paradise/api -- -t 'native form submissions|denies unauthenticated access|administrator|deactivat'` — PASS; 5 passed, 40 skipped by the name filter.
+
+**Project local integration smoke — FAIL**
+
+- Command: `API_BASE_URL=http://127.0.0.1:3000 npm --prefix Sports_Paradise run integration:smoke`
+- Exit status: 1.
+- Observed failure: `Frontend returned HTTP 401.` The smoke script makes an
+  unauthenticated request to the application root and expects a successful
+  frontend shell. The approved FR-010/AC-010 contract protects application
+  pages; returning 401 is correct. The smoke expectation is inconsistent:
+  it must verify unauthenticated denial and separately verify authenticated
+  shell access (or otherwise stop expecting an unauthenticated shell).
+- Earlier assertions in this run confirmed health, unauthenticated protected
+  readiness/OpenAPI/echo behavior, public login, and protected dashboard
+  behavior before reaching the incorrect root-shell assertion.
+- This failure is not silently waived because it is a project-native
+  integration smoke command and the smoke suite must agree with the approved
+  route contract. It is recorded as VR-007.
+
+**Database integration — PASS**
+
+- `npm --prefix Sports_Paradise run test:db:migrations` — exit 0. Safe isolated
+  database; additive auth schema and constraints, migration up/down, existing
+  foundation-row preservation, session repository behavior, and authentication
+  repository behavior passed.
+- `npm --prefix Sports_Paradise run test:db:provisioning` — exit 0.
+  Credential quoting/rotation, application-role authentication, invalid
+  configuration fail-fast behavior, and credential-safe diagnostics passed.
+- The temporary Cycle 3 admin scenario used a disposable Compose project,
+  unique synthetic credentials, and removed only its own containers/volume.
+  It did not connect to or alter the `.env.verify` target or any production
+  database.
+
+**Build / static / dependency checks**
+
+- `npm --prefix Sports_Paradise run build` — PASS; exit 0; workspaces built.
+- `npm --prefix Sports_Paradise run typecheck` — PASS; exit 0.
+- `npm --prefix Sports_Paradise run lint` — PASS; exit 0.
+- `npm --prefix Sports_Paradise run format:check` — FAIL; exit 1. Prettier
+  lists `apps/web/src/App.test.tsx`, `apps/web/src/App.tsx`, and
+  `scripts/local-dev.mjs`. These files are not changed by the current
+  implementation diff, but the approved project-wide formatting check still
+  fails on the candidate. No formatting changes were made. VR-006 remains
+  unresolved with its permanent ID.
+- `npm --prefix Sports_Paradise audit` — PASS; exit 0; 0 vulnerabilities.
+- `git diff --check` — PASS; exit 0.
+
+### 25.4 Requirements Verification Matrix
+
+| Requirement | Task | Verification Case | Evidence | Result |
+|---|---|---|---|---|
+| FR-001 | TASK-001, TASK-005, TASK-012 | VC-001, VC-008 | Frontend workspace tests and production build pass | PASS |
+| FR-002 | TASK-001, TASK-004 | VC-001, VC-008 | API workspace tests, typecheck/build pass | PASS |
+| FR-003 | TASK-003, TASK-008 | VC-009, VC-010 | PostgreSQL schema/migration/provisioning integration passes | PASS |
+| FR-004 | TASK-002, TASK-014 | VC-002, VC-013 | Development standards exist and lint passes; full format check is separately FAIL under VC-007 | PASS |
+| FR-005 | TASK-006, TASK-013 | VC-003, VC-009, VC-010 | Local development configuration and isolated database provisioning pass; smoke has the separate stale assertion failure recorded in VR-007 | PASS |
+| FR-006 | TASK-010, TASK-011 | VC-015 | Login document has email/password fields, password masking, and Login action; tests pass | PASS |
+| FR-007 | TASK-010, TASK-011 | VC-020 | Required input attributes and server-side missing-field rejection are tested; native browser interaction unavailable | NOT_VERIFIED |
+| FR-008 | TASK-009, TASK-010, TASK-011 | VC-001, VC-011, VC-015 | Hash verification and session issuance pass repository/API and isolated live login checks | PASS |
+| FR-009 | TASK-009, TASK-010, TASK-011 | VC-001, VC-015 | Generic invalid credentials and exact deactivated-account message tested; no session issued on failure | PASS |
+| FR-010 | TASK-011, TASK-013, TASK-014 | VC-014, VC-016, VC-019 | API tests enforce exact protected/public routes; CR-007 standalone Vite test denies protected document fallback | PASS |
+| FR-011 | TASK-009, TASK-010, TASK-012 | VC-001, VC-009, VC-011 | Session repository checks revoke only current session; auth/session suite passes | PASS |
+| FR-012 | TASK-008, TASK-010 | VC-001, VC-009, VC-015 | Signup required data, active account, unique email, password hash/length and throttling checks pass | PASS |
+| FR-013 | TASK-015 | VC-017 | Current local-admin/deactivation guide and isolated live admin deactivation/session-revocation flow pass | PASS |
+| BR-001 | TASK-001, TASK-003, TASK-005 | VC-001, VC-008, VC-009 | Separate workspace/persistence layers, tests, and migration checks pass | PASS |
+| BR-002 | TASK-002 | VC-002, VC-007, VC-013 | Standards documentation and lint pass; project format check fails and is tracked as VR-006 | PASS |
+| BR-003 | TASK-006, TASK-013 | VC-003, VC-009, VC-010 | Setup/provisioning checks pass; smoke assertion mismatch remains VR-007 | PASS |
+| BR-004 | TASK-001, TASK-005 | VC-001, VC-008 | Implemented as the approved web application; workspace tests/build pass | PASS |
+| BR-005 | TASK-009, TASK-010 | VC-001, VC-011, VC-015 | Active account and valid credentials required; isolated auth scenarios pass | PASS |
+| BR-006 | TASK-011, TASK-013, TASK-014 | VC-014, VC-016, VC-019 | Protected API/page routes and Vite ingress checks pass | PASS |
+| BR-007 | TASK-008, TASK-010 | VC-009, VC-011, VC-015 | Normalized uniqueness constraint and concurrent repository check pass | PASS |
+| BR-008 | TASK-015 | VC-017 | Active admin role required; unauthorized/admin/member cases plus isolated live deactivation pass | PASS |
+| NFR-MNT-001 | TASK-002, TASK-014 | VC-002, VC-007, VC-013 | Lint and standards documentation pass; Prettier project check fails | FAIL |
+| NFR-REL-001 | TASK-003, TASK-006, TASK-013 | VC-003, VC-009, VC-010 | Isolated provisioning and migration pass; full smoke is not green due VR-007 | FAIL |
+| NFR-SEC-001 | TASK-003, TASK-009, TASK-013 | VC-005, VC-010, VC-012 | Secret-safe configuration/provisioning evidence and 0-vulnerability audit pass | PASS |
+| NFR-SEC-002 | TASK-009, TASK-010 | VC-009, VC-011, VC-015 | Argon2id-only persistence and password verification tests pass | PASS |
+| NFR-SEC-003 | TASK-010 | VC-001, VC-015 | Generic invalid-credential response and deactivated-user handling pass | PASS |
+| NFR-SEC-004 | TASK-009, TASK-010 | VC-001, VC-009, VC-011 | Five-failure throttle/cooldown repository and API checks pass | PASS |
+| NFR-COMP-001 | TASK-001, TASK-002 | VC-004, VC-008 | All workspace typechecks/build pass | PASS |
+
+### 25.5 Acceptance Criteria Verification
+
+| Acceptance Criterion | Verification Case | Test / Evidence | Result |
+|---|---|---|---|
+| AC-001 | VC-001, VC-008 | Frontend workspace tests and production bundle | PASS |
+| AC-002 | VC-001, VC-004, VC-008 | API workspace tests, typecheck, build | PASS |
+| AC-003 | VC-009, VC-010 | Isolated PostgreSQL schema, migration, rollback, and provisioning tests | PASS |
+| AC-004 | VC-002, VC-013 | Development standards document is present and complete; lint passes | PASS |
+| AC-005 | VC-003, VC-009, VC-010 | Local setup/configuration and database provisioning pass; smoke assertion mismatch remains VR-007 | PASS |
+| AC-006 | VC-015 | Login form markup and password masking; native login/signup flow integration passes | PASS |
+| AC-007 | VC-020 | Required control attributes/server missing-field handling pass, but no browser engine was available to observe native no-request validation/message | NOT_VERIFIED |
+| AC-008 | VC-011, VC-015 | Valid user signup/login, stored Argon2id hash, session cookie, and redirect passed | PASS |
+| AC-009 | VC-001, VC-015 | Invalid and deactivated credentials produce correct responses without issuing a session | PASS |
+| AC-010 | VC-014, VC-016, VC-019 | Protected page/API controls and standalone Vite guard pass | PASS |
+| AC-011 | VC-001, VC-009, VC-011 | Logout/session repository tests prove current-session revocation and preserve independent sessions | PASS |
+| AC-012 | VC-009, VC-011, VC-015 | Required signup fields, password constraints, activation, normalized uniqueness and duplicate handling pass | PASS |
+| AC-013 | VC-009, VC-011 | Schema constraint and repository checks confirm Argon2id-only persistence | PASS |
+| AC-014 | VC-014, VC-016 | API route suite confirms exact JSON 401 and protected path behavior | PASS |
+| AC-015 | VC-017 | Isolated live signup/admin promotion/deactivation, revoked session, denied access, and exact disabled-login message | PASS |
+| AC-016 | VC-001, VC-009, VC-011 | Password length and five-failure cooldown/recovery checks pass | PASS |
+
+AC-007 is release-relevant and remains NOT_VERIFIED; implementation presence
+and server-side validation are not substituted for the specified browser
+interaction evidence. The gap is recorded as VR-008.
+
+### 25.6 Security, Regression, and Migration / Compatibility
+
+- **Security — PASS, except unresolved browser evidence gap:** API route tests
+  verify deny-by-default protection for `/ready`, `/openapi.json`, `/api/echo`,
+  unknown routes and near-matches; exact auth API exceptions remain limited.
+  Password storage, generic invalid-credential handling, deactivated account
+  behavior, throttling, HttpOnly session cookies, admin authorization and
+  account deactivation checks passed. `npm audit` reports zero vulnerabilities.
+- **CR-005 / CR-006 regression — PASS:** Full API/web suites and production
+  build passed; the API suite covers the resolved Fastify middleware boundary
+  and frontend-root behavior.
+- **CR-007 regression — PASS:** VC-019 starts the actual configured standalone
+  Vite server on an ephemeral port. `/dashboard` requests using both
+  `Accept: text/html` and `Accept: */*` return HTTP 403 and `Cache-Control:
+  no-store`, without SPA entry content. API Cycle 3's reviewed configuration
+  explicitly uses Vite middleware mode for the Fastify-embedded path; API
+  route tests continue to deny unauthorized page/module requests and allow
+  authenticated Vite middleware delivery. CR-007 is resolved in
+  `code-review.md`; this evidence independently confirms its material control.
+- **DR-001 / AD-008 / AD-010 controls — PASS:** Unauthenticated protected page
+  navigation receives the login document with HTTP 401/no redirect; API
+  protection and exact allowed public routes are covered by VC-014/VC-016.
+  Standalone Vite cannot bypass that Fastify ingress.
+- **Migration / compatibility — PASS:** Disposable database checks apply and
+  roll back additive authentication schema; preserve existing foundation
+  data; validate account/session/throttle constraints; and verify repository
+  behavior. No production data was used.
+- **Administrator operations — PASS:** The documented local-only procedure
+  matches the database role and current endpoint. A temporary harness started
+  an isolated migrated database and actual Fastify app, created a normal
+  operator account, promoted exactly one verified active row, authenticated
+  the operator, created and logged in a member, deactivated that member,
+  confirmed outstanding sessions were revoked, confirmed the old cookie no
+  longer accessed a protected operation, and confirmed the required
+  deactivated-account login message. The harness and isolated data were
+  removed; no persistent test code was added.
+
+### 25.7 Final Output Document Quality Matrix
+
+Local Markdown file references were checked and passed. The database guide's
+commands, app route, account state model, and security constraints were
+compared with the current project scripts and implementation. No secret
+contents were displayed or recorded.
+
+| Document | Existence | Completeness | Req Coverage | Accuracy | Consistency | Placeholders | Security | Formatting | Language | Implementation Consistency | Overall |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `docs/database.md` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+| `docs/development-standards.md` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+| `docs/sdlc/requirements.md` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | NOT_APPLICABLE | PASS |
+| `docs/sdlc/architecture.md` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+| `docs/sdlc/design-review.md` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | NOT_APPLICABLE | PASS |
+| `docs/sdlc/impl-plan.md` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+| `docs/sdlc/implementation-log.md` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+| `docs/sdlc/code-review.md` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+| `docs/sdlc/verification.md` | PASS | PENDING | PENDING | PENDING | PENDING | PENDING | PASS | PENDING | PASS | PENDING | NOT_VERIFIED |
+
+`docs/database.md` now documents safe local bootstrap, account verification,
+least-privilege operator steps, deactivation, session revocation, and secret
+safety; this supersedes the Cycle 2 observation for VR-005. The current
+implementation and all required lifecycle artifacts are present. Historical
+Cycle 2 statements remain clearly labeled as historical. The verification
+report's final quality row remains pending until VC-021 is executed.
+
+### 25.8 Finding Reconciliation and Re-verification
+
+| Finding | Severity | Cycle 2 state | Cycle 3 evidence / decision | Current status |
+|---|---|---|---|---|
+| VR-001 | MEDIUM | RESOLVED | Full `npm --prefix Sports_Paradise run lint` rerun passes | RESOLVED |
+| VR-002 | MEDIUM | RESOLVED | Full isolated `test:db:provisioning` rerun passes | RESOLVED |
+| VR-003 | HIGH | REMEDIATION_REQUIRED | Native form API tests and isolated live signup/login pass; response, duplicate, invalid and deactivated outcomes exercised | RESOLVED |
+| VR-004 | HIGH | REMEDIATION_REQUIRED | Current protected route tests reject `/ready`, `/openapi.json`, `/api/echo` and near-matches; live smoke's protected-route checks succeeded | RESOLVED |
+| VR-005 | MEDIUM | REMEDIATION_REQUIRED | Current local admin guide plus independent isolated live administrator lifecycle and session-revocation evidence pass | RESOLVED |
+| VR-006 | MEDIUM | REMEDIATION_REQUIRED | Current full format check still fails on three files; no formatting repair was made | REMEDIATION_REQUIRED |
+| VR-007 | MEDIUM | New Cycle 3 finding | Project smoke expects unauthenticated root shell, but protected root correctly returns 401; smoke expectation must be corrected and authenticated shell path verified | REMEDIATION_REQUIRED |
+| VR-008 | MEDIUM | New Cycle 3 finding | AC-007 browser-native required-field/no-request behavior cannot be confirmed without a browser runtime; attributes and server-side rejection alone are insufficient | REMEDIATION_REQUIRED |
+
+#### VR-006 — Project format check still fails
+
+- Severity: MEDIUM; Category: Format Check / Static Validation.
+- Requirements: FR-004, NFR-MNT-001; Acceptance Criterion: AC-004.
+- Task: TASK-014; Verification Case: VC-007.
+- Expected Result: `npm --prefix Sports_Paradise run format:check` passes on the
+  complete project candidate.
+- Actual Result: Exit 1. Prettier reports `apps/web/src/App.test.tsx`,
+  `apps/web/src/App.tsx`, and `scripts/local-dev.mjs`.
+- Evidence: Current Cycle 3 full format-check execution. These paths are not
+  modified in the current implementation diff; this is a persistent
+  project-wide failure, not a claim that CR-007 changed them. No formatter
+  write operation was run.
+- Risk / Impact: Project's recorded formatting/review-readiness check is not
+  green.
+- Required Outcome: Implementation corrects the formatting failure without
+  weakening the project check, reruns it and relevant regression checks, then
+  returns any material tracked change through Code Review and Verification.
+- Remediation Owner: Implementation Agent.
+- Status: `REMEDIATION_REQUIRED`.
+
+#### VR-007 — Local integration smoke expects unauthenticated protected root
+
+- Severity: MEDIUM; Category: Integration Test / Smoke.
+- Requirements: FR-005, FR-010; BR-003, BR-006; Acceptance Criteria: AC-005,
+  AC-010, AC-014.
+- Tasks: TASK-013, TASK-014; Verification Case: VC-003.
+- Architecture: CMP-001, CMP-002, CMP-004; AD-003, AD-008, AD-010.
+- Design Review: DR-001.
+- Expected Result: The project-native local smoke verifies only the approved
+  public routes without a session, expects protected application pages to
+  return HTTP 401, and verifies the frontend shell through an authenticated
+  session.
+- Actual Result: `scripts/verify-local-stack.mjs` performs an unauthenticated
+  request to `/` and expects a successful frontend shell. On the current
+  reviewed candidate, it receives HTTP 401 and exits 1 with
+  `Frontend returned HTTP 401.` That 401 is correct under FR-010; the smoke
+  expectation is not.
+- Evidence: `API_BASE_URL=http://127.0.0.1:3000 npm --prefix Sports_Paradise
+  run integration:smoke`; exit 1. Earlier assertions in the same command
+  verified health, protected readiness/OpenAPI/echo, public login, and the
+  protected dashboard response before the root assertion failed.
+- Risk / Impact: The repository's full local integration smoke cannot pass
+  against the approved deny-by-default behavior, reducing repeatable release
+  evidence and obscuring whether authenticated frontend delivery works.
+- Required Outcome: Update the smoke scenario to assert unauthenticated root
+  denial and then verify shell delivery using a valid authenticated session;
+  retain exact public/protected route assertions. Verification does not edit
+  the script.
+- Remediation Owner: Implementation Agent.
+- Status: `REMEDIATION_REQUIRED`.
+
+#### VR-008 — AC-007 browser-native required-field behavior is not verified
+
+- Severity: MEDIUM; Category: Acceptance Criteria / Test Coverage.
+- Requirement: FR-007; Acceptance Criterion: AC-007.
+- Tasks: TASK-010, TASK-011; Verification Case: VC-020.
+- Expected Result: In a supported browser, a missing username or password
+  prevents the form request and displays the required-field validation
+  feedback.
+- Actual Result: The HTML contains required controls and server-side tests
+  confirm missing form fields are rejected before hashing/account creation,
+  but no real browser interaction verified that the browser prevents the
+  request and displays the user-facing required-field message. No browser
+  executable or browser automation package is available in this environment.
+- Evidence: VC-020 inventory and rendered-form/API test evidence; no
+  browser-runtime execution occurred. This is NOT_VERIFIED, not PASS.
+- Risk / Impact: The specific user-facing no-request validation behavior in
+  AC-007 is not proven, despite the correct HTML attributes.
+- Required Outcome: Provide durable browser-level verification demonstrating
+  missing username/password blocks network submission and presents the
+  required-field message; preserve the approved behavior and test it through
+  Code Review and Verification if persistent test code changes.
+- Remediation Owner: Implementation Agent.
+- Status: `REMEDIATION_REQUIRED`.
+
+All prior evidence and the original failed VC results remain in Cycle 2 above.
+Implementation's `REMEDIATION_COMPLETE` handoffs and Code Review approval are
+not treated as Verification resolution; VR-003, VR-004, and VR-005 were
+resolved only after the independent Cycle 3 evidence recorded here.
+
+### 25.9 Blocked / Not Verified Checks and Upstream Changes
+
+- **BLOCKED:** None.
+- **NOT_VERIFIED:** VC-020 / AC-007 / FR-007; browser-native no-request
+  validation and user feedback were not executed because no browser runtime or
+  automation package is available.
+- **NOT_VERIFIED:** VC-018 / VC-021 / `verification.md` final formatting and
+  quality check remain pending until the report update is complete. They must
+  be rerun before finalizing this cycle.
+- `integration:smoke` is **FAIL**, not BLOCKED: the current project service
+  answered, but the smoke's unauthenticated-root expected outcome is
+  inconsistent with the approved protected-page policy.
+- Requirements Changes Required: None.
+- Architecture Changes Required: None.
+- Implementation Plan Changes Required: None.
+
+### 25.10 Remediation and Re-verification History
+
+| Cycle | VR | Prior result | Cycle 3 evidence | Code Review | Result |
+|---|---|---|---|---|---|
+| 1 → 2 → 3 | VR-001 | FAIL, then RESOLVED | Current full lint rerun passed | Current review approval applies | RESOLVED |
+| 1 → 2 → 3 | VR-002 | BLOCKED/required remediation, then RESOLVED | Current isolated database provisioning rerun passed | Current review approval applies | RESOLVED |
+| 2 → 3 | VR-003 | REMEDIATION_REQUIRED | Native form tests and isolated real app/database signup/login flows passed | CODE_REVIEW_APPROVED on same candidate | RESOLVED |
+| 2 → 3 | VR-004 | REMEDIATION_REQUIRED | Protected public-route and near-match regressions passed on current code | CODE_REVIEW_APPROVED on same candidate | RESOLVED |
+| 2 → 3 | VR-005 | REMEDIATION_REQUIRED | Database guide quality and isolated real admin/deactivation lifecycle passed | CODE_REVIEW_APPROVED on same candidate | RESOLVED |
+| 2 → 3 | VR-006 | REMEDIATION_REQUIRED | Project Prettier check still fails | Current review approval is fresh for the candidate; failure remains | REMEDIATION_REQUIRED |
+| 3 | VR-007 | New | Project smoke fails due unauthenticated root expectation | Script remediation requires Code Review when materially changed | REMEDIATION_REQUIRED |
+| 3 | VR-008 | New | Browser no-request validation unavailable | Persistent verification work requires review where candidate changes | REMEDIATION_REQUIRED |
+
+### 25.11 Current Final Verification Gate
+
+| Gate | Result | Evidence / Impact |
+|---|---|---|
+| Requirements / Architecture / Design Review / Plan / Implementation / Code Review entry gates | PASS | All authoritative lifecycle states are valid and current |
+| Candidate freshness | PASS | Current code-review-approved dirty candidate exactly matches the evaluated implementation paths |
+| Unit tests | PASS | 51 passed, 0 failed |
+| Integration tests | FAIL | Project local smoke exits 1 on a stale unauthenticated-root expectation; VR-007 |
+| Requirements coverage | FAIL | FR-007 is NOT_VERIFIED under VC-020 |
+| Acceptance Criteria coverage | FAIL | AC-007 is NOT_VERIFIED under VC-020 |
+| Build | PASS | Full workspace build exits 0 |
+| Static validation | FAIL | `format:check` exits 1; VR-006; lint/typecheck pass |
+| Security verification | PASS | Route/auth/session and dependency checks pass; AC-007 browser evidence remains separately NOT_VERIFIED |
+| Dependency verification | PASS | `npm audit`: 0 vulnerabilities |
+| Regression | FAIL | Required project smoke check fails; other CR/DR regressions pass |
+| Migration / compatibility | PASS | Isolated migration, rollback, preservation and repository checks pass |
+| Design Review controls | PASS | DR-001 and relevant AD controls verified |
+| Code Review remediation regression | PASS | CR-005, CR-006, CR-007 regressions pass |
+| Final output document quality | NOT_VERIFIED | Lifecycle/product documents pass; this report's current-cycle quality remains pending VC-021 |
+| Unresolved VR findings | FAIL | VR-006, VR-007, VR-008 require remediation |
+| BLOCKED checks | PASS | None |
+| NOT_VERIFIED checks | FAIL | AC-007 and report validation pending |
+| Upstream changes required | PASS | None |
+| Traceability | PASS | All cited FR/BR/NFR/AC/TASK/CMP/AD/DR/CR/VC/VR IDs exist |
+| Final recommendation | FAIL | Do not package Step 8; implementation remediation and independent re-verification are required |
+
+### 25.12 Final Decision
+
+`VERIFICATION_FAILED`
+
+Verification Status: `REMEDIATION_REQUIRED`
+
+Required next sequence:
+
+1. Implementation Agent addresses VR-006, VR-007, and VR-008 without changing
+   approved Requirements, Architecture, or Implementation Plan scope.
+2. Code Review independently reviews material implementation, smoke, or
+   persistent-test changes and approves the same current candidate.
+3. Verification reruns the original failed VC-007/VC-003/VC-020 checks, the
+   relevant regression suites, affected Requirements/ACs, and document-quality
+   checks; Verification alone resolves the VR findings.
+
+CR-007 and Code Review are no longer blocking. Step 8 is still not authorized.
+No Pull Request was created.

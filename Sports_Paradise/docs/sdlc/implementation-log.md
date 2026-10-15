@@ -2559,3 +2559,93 @@ REMEDIATION_COMPLETE
 READY_FOR_REREVIEW — CR-007 remains owned by the Code Review Agent for
 independent re-review and final resolution; this implementation evidence does
 not mark CR-007 `RESOLVED`.
+
+### CR-007 Remaining Direct Vite Startup Gap — Remediation Addendum
+
+- Finding: `CR-007` — HIGH; Decision `ACCEPTED`; Code Change Required `YES`;
+  Status `REMEDIATION_REQUIRED` at the current independent re-review.
+- Related TASK: `TASK-013`.
+- Traceability: AC-010; CMP-001, CMP-002, CMP-004; AD-003, AD-008, AD-010;
+  DR-001.
+- Required Outcome: A directly started Vite server must not serve protected
+  pages outside the Fastify authorization boundary. Preserve the authorized
+  Fastify-embedded Vite middleware path.
+
+#### Remediation Summary
+
+Added a Vite middleware guard that denies standalone development-server
+requests for page/document routes (including `/dashboard`) with HTTP 403 and
+`Cache-Control: no-store` before Vite's SPA fallback can return `index.html`.
+The guard also applies to standalone Vite preview servers. The API explicitly
+starts Vite in middleware mode, where the guard is not installed; Fastify
+continues to authorize requests before invoking the embedded Vite middleware.
+No Requirements, Architecture, Design Review, or implementation-plan changes
+were made.
+
+#### Files Modified
+
+- `apps/web/vite.config.ts` — install standalone development and preview page
+  guards; preserve the middleware-mode integration.
+- `apps/api/src/app.ts` — explicitly configure the supported Fastify-embedded
+  Vite server in middleware mode.
+- `apps/web/src/vite-standalone.test.ts` — start the configured Vite server
+  standalone and assert that unauthenticated `/dashboard` requests are denied
+  for both `Accept: text/html` and `Accept: */*`, with no SPA entry content.
+- `docs/sdlc/implementation-log.md` — this CR-007 remediation addendum.
+
+#### Focused Validation Evidence
+
+- Standalone Vite regression
+  - Category: INTEGRATION_TEST; scope: configured standalone Vite server.
+  - Command: `npm --prefix Sports_Paradise run test --workspace @sports-paradise/web`
+  - Command Source: `apps/web/package.json` workspace test script.
+  - Result: PASS; 2 test files, 6 tests passed, including unauthenticated
+    `/dashboard` requests with both HTML and wildcard Accept headers.
+- Fastify authorization and embedded Vite regression
+  - Category: INTEGRATION_TEST; scope: API/Fastify ingress.
+  - Command: `npm --prefix Sports_Paradise run test --workspace @sports-paradise/api`
+  - Command Source: `apps/api/package.json` workspace test script.
+  - Result: PASS; 4 test files, 45 tests passed, including protected page and
+    Vite middleware authorization behavior.
+- Frontend typecheck
+  - Category: TYPECHECK; scope: web workspace.
+  - Command: `npm --prefix Sports_Paradise run typecheck --workspace @sports-paradise/web`
+  - Command Source: `apps/web/package.json` workspace typecheck script.
+  - Result: PASS; TypeScript completed.
+- API typecheck
+  - Category: TYPECHECK; scope: API workspace.
+  - Command: `npm --prefix Sports_Paradise run typecheck --workspace @sports-paradise/api`
+  - Command Source: `apps/api/package.json` workspace typecheck script.
+  - Result: PASS; TypeScript completed.
+- Frontend production build
+  - Category: BUILD; scope: web workspace.
+  - Command: `npm --prefix Sports_Paradise run build --workspace @sports-paradise/web`
+  - Command Source: `apps/web/package.json` workspace build script.
+  - Result: PASS; Vite production build completed.
+- Default-port spot check
+  - Category: SECURITY_CHECK; scope: standalone Vite at its default port 5173.
+  - Command: direct `createServer()` startup using the repository's
+    `apps/web/vite.config.ts`, followed by `GET /dashboard`.
+  - Result: BLOCKED; Vite could not bind port 5173 because it was already in
+    use. The pre-existing listener was not inspected or stopped. The persistent
+    regression test exercised the same standalone Vite configuration on an
+    ephemeral port and passed.
+
+#### Baseline Impact and Handoff
+
+- Git repository root: `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot`.
+- Project root: `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise`.
+- Branch: `copilot/phase1`.
+- HEAD at remediation: `d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd`.
+- The pre-existing modified `Sports_Paradise/docs/sdlc/code-review.md` was
+  preserved and not edited by this remediation. No files were staged, committed,
+  or pushed.
+- Material implementation change: YES. Re-review the current candidate;
+  existing Code Review approval must not be carried onto this changed
+  implementation.
+- Requirements Change: None.
+- Architecture Change: None.
+- Implementation Plan Change: None.
+- Result: `REMEDIATION_COMPLETE`.
+- Handoff: `READY_FOR_REREVIEW` — CR-007 remains owned by the Code Review
+  Agent. This implementation evidence does not mark it `RESOLVED`.

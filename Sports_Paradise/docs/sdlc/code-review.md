@@ -5,32 +5,32 @@
 - Project Name: Sports_Paradise
 - Project Mode: EXISTING_PROJECT
 - Project Root: `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise`
-- Review Cycle: 2
+- Review Cycle: 3
 - Branch: `copilot/phase1`
-- Review Base: `HEAD 1604a2c8e52be42dbb4a4886a41e9d2faf9bbfa1` (no separate PR/base revision established)
-- Reviewed Revision: `uncommitted working-tree candidate based on HEAD 1604a2c8e52be42dbb4a4886a41e9d2faf9bbfa1`
-- Working Tree State: `DIRTY`; 1 path is staged, 18 tracked paths are modified and unstaged, and 6 paths are untracked.
+- Review Base: `HEAD d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd` (no separate PR/base revision established)
+- Reviewed Revision: uncommitted working-tree candidate based on `d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd`; the candidate includes the CR-007 source, persistent-test, and implementation-log changes listed in Section 33.
+- Working Tree: `DIRTY`; no staged changes; 4 modified tracked paths and 1 untracked persistent test. This Code Review artifact was already modified before this final re-review.
 - Requirements Baseline: `docs/sdlc/requirements.md`; `APPROVED`
 - Architecture Baseline: `docs/sdlc/architecture.md`; `DESIGN_REVIEW_APPROVED`
 - Design Review Baseline: `docs/sdlc/design-review.md`; `DESIGN_REVIEW_APPROVED`
 - Implementation Plan Baseline: `docs/sdlc/impl-plan.md`; `READY_FOR_IMPLEMENTATION` and `APPROVED`
 - Implementation Log: `docs/sdlc/implementation-log.md`; `READY_FOR_CODE_REVIEW`
 - Previous recorded Code Review Status: `CODE_REVIEW_APPROVED` (historical)
-- Code Review Status: `IMPLEMENTATION_CHANGES_REQUIRED`
+- Code Review Status: `CODE_REVIEW_APPROVED`
 
-Historical evidence note: The prior review narrative, checklist results, finding decisions, and earlier follow-up results below are retained as historical evidence. This follow-up independently re-reviews CR-006 against the current implementation and verification evidence and records the separate Vite-entry issue as CR-007. CR-005 remains resolved.
+Historical evidence note: Prior review narratives, checklist results, finding decisions, and follow-up results are retained as historical evidence. Sections 30–32 preserve the original deferral and the earlier failed CR-007 re-review; Section 33 records the final independent re-review against the current uncommitted working-tree candidate. The human Decision `ACCEPTED` is preserved and is not a user-issued Code Review approval. CR-005 and CR-006 remain resolved.
 
 ## 2. Review Objective
 
-Independently re-review the CR-006 frontend-root remediation against the approved implementation scope and current verification evidence, and assess the separate Vite development entry against the authentication boundary. CR-005 remains resolved from its prior independent re-review. This follow-up does not modify production code or tests.
+Independently re-review only the accepted CR-007 remediation: confirm standalone Vite cannot serve protected SPA pages, Fastify-embedded Vite remains behind Fastify authorization, and frontend API calls use the session-compatible same-origin flow. CR-005 and CR-006 remain resolved from prior independent re-reviews.
 
 ## 3. Review Baseline
 
 - Repository root: `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot`
 - Candidate under review: `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise`
-- Baseline: branch `copilot/phase1`, HEAD `1604a2c8e52be42dbb4a4886a41e9d2faf9bbfa1`; 1 staged path, 18 modified tracked paths, and 6 untracked paths. The reviewed candidate is the current uncommitted worktree, not HEAD alone.
-- Re-review scope: CR-006 frontend-root remediation, including the Vite root and production static root; CR-005 remains resolved from the prior independent re-review.
-- Validation run during re-review:
+- Baseline: branch `copilot/phase1`, HEAD `d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd`; dirty working tree with no staged changes, 4 modified tracked paths, and 1 untracked persistent test. Review applies to the complete working-tree candidate, not HEAD alone.
+- Re-review scope: CR-007 standalone Vite development entry and same-origin session credential remediation.
+- Historical validation from the prior CR-005/CR-006 re-reviews:
   - `cd Sports_Paradise && npm test --workspace @sports-paradise/api` — PASS (4 files, 41 tests)
   - `cd Sports_Paradise && npm run typecheck --workspace @sports-paradise/api` — PASS
   - `cd Sports_Paradise && npm run build --workspace @sports-paradise/web` — PASS
@@ -63,6 +63,10 @@ Independently re-review the CR-006 frontend-root remediation against the approve
 
 ## 5. Mandatory Code Review Checklist
 
+The checklist below records the prior review cycle. Section 33 contains the
+current independent re-review outcome for CR-007 and supersedes its earlier
+checklist results.
+
 | Review Area | Review Question | Result | Findings | Evidence / Notes |
 |---|---|---|---|---|
 | Correctness | Does each component behave as specified in requirements.md? | FINDINGS | CR-007 | The separate Vite browser entry bypasses Fastify's protected-page authorization, and its cross-port API requests do not use same-origin session credentials. |
@@ -74,6 +78,9 @@ Independently re-review the CR-006 frontend-root remediation against the approve
 | Dependency Safety | Were introduced/relevant dependencies assessed with available repository-native mechanisms? | PASS | None | Existing workspace dependencies were checked via the project-native test/typecheck path, and no suspicious or unnecessary additions were introduced for the approved scope. |
 
 ## 6. Additional SDLC Review Areas
+
+The results below are historical to the prior review cycle; see Section 33
+for the current CR-007 re-review.
 
 | Review Area | Result | Findings | Evidence / Notes |
 |---|---|---|---|
@@ -89,18 +96,20 @@ Independently re-review the CR-006 frontend-root remediation against the approve
 
 ## 7. Review Summary
 
+- The following finding counts include all permanent findings; status counts
+  reflect the current state after the Section 33 re-review.
 - CRITICAL: 0
 - HIGH: 2
 - MEDIUM: 1
 - LOW: 0
 - INFO: 0
 - Pending Decisions: 0
-- Accepted: 2
+- Accepted: 3
 - Rejected: 0
-- Deferred: 1
+- Deferred: 0
 - Remediation Required: 0
 - Ready for Re-review: 0
-- Resolved: 2
+- Resolved: 3
 
 ## 8. Findings
 
@@ -132,7 +141,7 @@ Independently re-review the CR-006 frontend-root remediation against the approve
 - Status: RESOLVED
 - Re-review: Independent Code Review re-review completed; see Section 29.
 
-### CR-007 — Standalone Vite development entry bypasses protected-page authorization
+### CR-007 — Standalone Vite development entry bypasses protected-page authorization (Original Review Cycle 2 Finding)
 
 - Severity: HIGH
 - Category: Security / Authorization
@@ -141,16 +150,22 @@ Independently re-review the CR-006 frontend-root remediation against the approve
 - Evidence: `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise/package.json:15-17` defines `dev` and `dev:web`; `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise/scripts/local-dev.mjs:22-23,97-111` starts both API and web processes and identifies the web URL as port 5173; `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise/apps/web/package.json:7` launches Vite directly, and `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise/apps/web/vite.config.ts:4-6` configures no authorization middleware or API proxy. The web client defaults to API port 3000 and uses same-origin credentials in `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise/apps/web/src/api.ts:8-10,17-22,44-50`; the browser application includes the dashboard and login/signup links in `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise/apps/web/src/App.tsx:76-80,103-116,145-160`. By contrast, `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise/apps/api/src/app.ts:491-542` enforces session checks only on the Fastify ingress before forwarding requests to its embedded Vite middleware.
 - Impact: The browser can receive the protected dashboard application shell from the standalone Vite server without Fastify authorization. Protected API data remains guarded by Fastify, but the page-level access boundary is bypassed and the session-dependent browser flow does not work consistently across the two ports.
 - Required Outcome: Ensure the development browser entry cannot serve protected pages outside the Fastify authorization boundary and that browser API requests use a session-compatible origin/credential flow.
-- Decision: DEFERRED
-- Rationale: will be checked in future
+- Original Decision (Review Cycle 2): DEFERRED
+- Original Rationale: “will be checked in future”
 - Code Change Required: YES
 - Remediation Owner: implementation
-- Deferral Scope: Remediation and reassessment are postponed; no specific date or milestone was recorded.
-- Residual Risk: Until revisited, unauthenticated users can load the dashboard SPA through port 5173, and browser requests from that origin do not include the port-3000 session cookie under the current same-origin credential mode. Protected API endpoints remain subject to Fastify authorization.
-- Future Action: Revisit CR-007 in a future review; align or remove the direct Vite entry so protected pages are authorized and the browser session flow works across the development ingress, then independently re-review.
-- Status: DEFERRED
+- Original Deferral Scope: Remediation and reassessment were postponed; no specific date or milestone was recorded.
+- Original Residual Risk: At the time of the initial finding, unauthenticated users could load the dashboard SPA through port 5173, and browser requests from that origin did not include the port-3000 session cookie under the same-origin credential mode. Protected API endpoints remained subject to Fastify authorization.
+- Original Future Action: Revisit CR-007 in a future review; align or remove the direct Vite entry so protected pages are authorized and the browser session flow works across the development ingress, then independently re-review.
+- Original Status (Review Cycle 2): DEFERRED
+- Current Decision: ACCEPTED; the user's decision is preserved in Section 32.
+- Current Status: RESOLVED by independent Code Review re-review; see Section 33.
 
 ## 9. Correctness Review
+
+Sections 9–23 retain prior-cycle review commentary. For CR-007, the current
+implementation evidence and conclusions in Section 33 supersede statements
+about the previously configured development entry and credential flow.
 
 Requests entering Fastify behave as specified by the approved requirements and architecture: the public flow serves the public login and signup documents directly, protected pages receive the standalone HTML 401 login document without redirect, and protected API calls return `{"error":"Authentication required."}` as required. Login validates normalized email, password length, and deactivated-account handling. Account signup remains privacy-preserving and enforces required fields. The session lifecycle and logout flow are consistent with the approved auth model when the browser uses the Fastify ingress. The separate Vite entry and cross-port credential mismatch are recorded in CR-007.
 
@@ -231,11 +246,14 @@ Implementation was assigned remediation of CR-005 and CR-006. CR-005 was indepen
 |---|---|---|
 | CR-005 | ACCEPTED | Human acceptance recorded; no separate rationale provided. |
 | CR-006 | ACCEPTED | Human acceptance recorded; no separate rationale provided. |
-| CR-007 | DEFERRED | will be checked in future |
+| CR-007 | ACCEPTED | Human explicitly instructed “change CR-007 to approve and fix”; this accepts the finding and authorizes remediation, but is not Code Review approval or resolution. The earlier DEFERRED decision is retained as history in Sections 8 and 30 and superseded by this disposition. |
 
-## 26. Deferred Risks
+## 26. CR-007 Residual Risk (Historical)
 
-CR-007 remains a HIGH residual risk: unauthenticated users can load the dashboard SPA through the standalone Vite server on port 5173, and browser API requests from that origin do not include the port-3000 session cookie under `credentials: "same-origin"`. Protected API endpoints remain guarded by Fastify. Remediation and reassessment are deferred; no schedule or milestone was specified.
+At the end of the prior review cycle, CR-007 remained a HIGH
+authorization-boundary risk because direct Vite CLI startup served protected
+SPA content outside Fastify. Section 32 preserves that prior failed
+re-review's evidence; Section 33 records the final re-review and resolution.
 
 ## 27. Upstream Changes Required
 
@@ -276,16 +294,197 @@ This section records the outcome at completion of the CR-006-only re-review. Its
 - CR-005: RESOLVED by independent re-review
 - CR-006: RESOLVED by independent re-review
 
-## 30. CR-007 Deferral and Current Gate
+## 30. CR-007 Original Deferral (Historical)
 
-- Human disposition: DEFERRED; rationale recorded as “will be checked in future.”
-- Finding status: DEFERRED; the HIGH security risk remains unresolved.
-- Approval effect: The Code Review contract requires no unresolved blocking HIGH finding before approval. No explicit governance exception was recorded for CR-007, so deferral does not satisfy the Code Review approval gate.
-- Current Code Review Status: `IMPLEMENTATION_CHANGES_REQUIRED`
-- Next action: Revisit the deferral in a future review. Step 7 remains blocked until CR-007 is resolved after implementation remediation and independent Code Review, or an explicit governed exception changes the approval gate.
+- At the end of Review Cycle 2, the human disposition was DEFERRED with the
+  rationale “will be checked in future,” and CR-007 was recorded as DEFERRED.
+- That historical decision did not satisfy the Code Review approval gate. The
+  user later explicitly instructed that CR-007 be accepted and fixed; the
+  decision is preserved in Section 32 and the final re-review outcome is
+  recorded in Section 33.
 
-## 31. Final Decision
+## 31. Final Decision at the End of Review Cycle 2 (Historical)
 
 `CHANGES_REQUIRED`
 
-CR-007 remains a deferred, unresolved HIGH finding; the Code Review gate is not approved.
+At that time CR-007 was deferred and unresolved, and the Code Review gate was
+not approved. The subsequent failed re-review is preserved in Section 32; the
+final finding status and phase decision are recorded in Section 33.
+
+## 32. CR-007 Independent Re-review — Previous Failed Re-review
+
+This section preserves the previous failed re-review as historical evidence;
+Section 33 records the final independent re-review and supersedes its status
+and phase decision.
+
+- Re-review date: 2026-10-15.
+- Re-review baseline: Git repository root
+  `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot`;
+  project root
+  `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise`;
+  branch `copilot/phase1`; HEAD
+  `d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd`; working tree clean.
+- Candidate freshness: The previously reported remediation changes to the web
+  client and development-entry configuration were present in the committed
+  candidate. The prior review checks were executed against this HEAD. No
+  implementation or persistent test files were modified during this review.
+- Human decision: `ACCEPTED`, based on the user's explicit instruction to
+  “change CR-007 to approve and fix.” This records agreement with the finding
+  and authorization to remediate it; it is not a human-issued Code Review
+  approval and does not resolve CR-007. The prior `DEFERRED` decision is
+  preserved in the historical record and superseded by this explicit human
+  decision.
+- Finding: CR-007 remains a HIGH Security / Authorization finding. The
+  ordinary root `dev:web` script and `@sports-paradise/web` workspace `dev`
+  script now exit 1 with instructions to use the Fastify entry. The API client
+  now calls relative `/ready` and `/api/auth/logout` paths with
+  `credentials: "same-origin"`, which addresses the prior cross-origin cookie
+  mismatch when the client is served by Fastify.
+- Required outcome: A standalone development server must not serve protected
+  pages outside the Fastify authorization boundary, and browser API requests
+  must use a session-compatible same-origin flow.
+- Re-review evidence: The Vite config at
+  `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise/apps/web/vite.config.ts`
+  still configures Vite without an authorization guard. From
+  `Sports_Paradise/apps/web`, directly running
+  `../../node_modules/.bin/vite --host 127.0.0.1 --port 5179 --strictPort`
+  started a standalone Vite server. An unauthenticated request
+  `curl --silent --show-error --include --max-time 5 -H 'Accept: text/html' http://127.0.0.1:5179/dashboard`
+  returned HTTP 200 and the SPA `index.html`, including `/@vite/client` and
+  `/src/main.tsx`. This serves the protected dashboard application shell
+  without passing through Fastify. The standalone process was stopped after
+  the check.
+- Disabled-script checks: `npm --prefix Sports_Paradise run dev --workspace
+  @sports-paradise/web` and `npm --prefix Sports_Paradise run dev:web` each
+  exited 1 as intended. These checks establish that those npm aliases are
+  disabled, but do not negate the independently reproduced direct Vite CLI
+  bypass.
+- Same-origin client evidence: `apps/web/src/api.ts` uses relative paths and
+  `credentials: "same-origin"`; the frontend unit test asserts those options.
+- Focused validation executed against the current candidate:
+  - `npm --prefix Sports_Paradise run test --workspace @sports-paradise/web` —
+    PASS; 1 test file, 5 tests.
+  - `npm --prefix Sports_Paradise run test --workspace @sports-paradise/api` —
+    PASS; 4 test files, 45 tests.
+  - `npm --prefix Sports_Paradise run typecheck --workspace @sports-paradise/web`
+    — PASS; TypeScript completed.
+  - `npm --prefix Sports_Paradise run build --workspace @sports-paradise/web`
+    — PASS; Vite production build completed.
+- Observed outcome: The same-origin session mismatch is corrected for the
+  Fastify-served browser entry, but the required authorization-boundary
+  outcome is not met because direct Vite CLI startup still serves protected
+  page content with HTTP 200.
+- Result: `FAIL` for the CR-007 required outcome; keep the same permanent
+  finding ID. No separate finding was created because the remaining direct CLI
+  path is the same standalone-Vite authorization-boundary issue.
+- Current finding disposition: Decision `ACCEPTED`; Code Change Required
+  `YES`; Remediation Owner `implementation`; Status
+  `REMEDIATION_REQUIRED`. The implementation's `READY_FOR_REREVIEW` handoff
+  was reviewed but is not evidence of resolution.
+- Current Code Review gate: `IMPLEMENTATION_CHANGES_REQUIRED` /
+  `CHANGES_REQUIRED`. The unresolved HIGH finding blocks approval; no
+  governance exception is recorded. CR-005 and CR-006 remain `RESOLVED`.
+- Step 7: May not proceed yet because Step 6 has not reached
+  `CODE_REVIEW_APPROVED`. After CR-007 is remediated and independently
+  re-reviewed to resolution, Step 7 must re-verify the materially changed
+  implementation. The existing Verification artifact already records
+  `REMEDIATION_REQUIRED` and unresolved VR-003 through VR-006; its owning
+  Verification Agent must reconcile/reverify that state without this Code
+  Review updating `verification.md`.
+
+Current Final Decision:
+
+`CHANGES_REQUIRED`
+
+## 33. CR-007 Independent Re-review — Final
+
+- Re-review date: 2026-10-15.
+- Scope: Independent re-review of the accepted CR-007 remediation only. No
+  implementation or persistent test files were modified by Code Review.
+- Baseline: Git repository root
+  `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot`;
+  project root
+  `/Users/prashantchauhan/Desktop/Projects/copilot/sdlc-ai-agents-copilot/Sports_Paradise`;
+  branch `copilot/phase1`; HEAD
+  `d5b7a4103b2a2190ddd2d655dc0c18133e3bd1bd`. The worktree is DIRTY, with no
+  staged changes, 4 modified tracked paths, and 1 untracked project path. The
+  complete candidate reviewed is the working tree, not HEAD alone:
+  `apps/api/src/app.ts` and `apps/web/vite.config.ts` (implementation source),
+  `apps/web/src/vite-standalone.test.ts` (untracked persistent regression
+  test), `docs/sdlc/implementation-log.md`, and this Code Review artifact.
+- Human decision: `ACCEPTED`, preserved from the user's explicit disposition
+  recorded in Sections 25 and 32. This remains a finding decision and is not
+  represented as user approval of this Code Review or as the basis for
+  resolution.
+- Required outcome: A standalone development server must not serve protected
+  pages outside the Fastify authorization boundary; the supported embedded
+  Vite path must remain behind Fastify authorization; the browser API flow
+  must remain same-origin/session-compatible.
+- Implementation reviewed:
+  - `apps/web/vite.config.ts` registers
+    `denyStandalonePageRequests` in the standalone development server before
+    SPA fallback. For GET/HEAD document/page routes it returns HTTP 403 with
+    `Cache-Control: no-store` and does not pass the request to Vite's fallback.
+    The guard is not installed when Vite is configured with
+    `server.middlewareMode`; the Vite preview server also receives the guard.
+  - `apps/api/src/app.ts` explicitly starts embedded development Vite with
+    `middlewareMode: true`. Fastify checks the request route and authenticates
+    protected requests before calling `viteServer.middlewares`; unauthenticated
+    protected pages receive the login document with HTTP 401, and protected
+    module requests receive JSON HTTP 401. Authenticated requests continue to
+    the embedded Vite middleware.
+  - `apps/web/src/api.ts` uses relative `/ready` and `/api/auth/logout` URLs
+    with `credentials: "same-origin"`.
+- Regression evidence:
+  - `apps/web/src/vite-standalone.test.ts` starts the actual configured Vite
+    server on an ephemeral port and requests `/dashboard` with both
+    `Accept: text/html` and `Accept: */*`. Both responses are asserted to be
+    HTTP 403, `Cache-Control: no-store`, and not to contain the SPA entry
+    module. This directly covers the standalone SPA-fallback bypass that
+    remained in the failed Section 32 review.
+  - `apps/api/src/app.test.ts` exercises the Fastify-embedded Vite path:
+    unauthenticated protected page and module requests are denied, while
+    authenticated Vite client and frontend-module requests are served.
+- Focused validation executed against this working-tree candidate:
+  - `npm --prefix Sports_Paradise run test --workspace @sports-paradise/web` —
+    PASS; 2 test files, 6 tests.
+  - `npm --prefix Sports_Paradise run test --workspace @sports-paradise/api` —
+    PASS; 4 test files, 45 tests.
+  - `npm --prefix Sports_Paradise run typecheck --workspace @sports-paradise/web`
+    — PASS; exit status 0.
+  - `npm --prefix Sports_Paradise run typecheck --workspace @sports-paradise/api`
+    — PASS; exit status 0.
+  - `npm --prefix Sports_Paradise run build --workspace @sports-paradise/web` —
+    PASS; Vite production build completed.
+  - `git diff --check` — PASS before this evidence was appended; it is rerun
+    after the artifact update.
+  - The implementation log reports a direct default-port 5173 spot check as
+    BLOCKED because that port already had a listener. Code Review did not
+    inspect, stop, or disrupt that listener. The standalone regression test
+    independently starts the same configured Vite server on an ephemeral port
+    and verifies denial.
+- Independent result: `PASS` for the CR-007 required outcome. The standalone
+  route guard blocks the direct Vite document request before SPA fallback, the
+  supported Fastify-embedded Vite route retains its authorization boundary,
+  and the frontend uses the same-origin session flow. The prior failed
+  Section 32 re-review remains preserved as historical evidence. CR-007 keeps
+  its permanent ID and human Decision `ACCEPTED`; its finding Status is now
+  `RESOLVED` by this independent Code Review re-review.
+- Finding/gate assessment: CR-005 and CR-006 are already independently
+  recorded as `RESOLVED`; CR-007 is `RESOLVED`; no other unresolved blocking
+  CRITICAL or HIGH finding, accepted remediation, or pending human finding
+  decision remains in the current finding record. No governance exception is
+  used.
+- Current Code Review phase gate: `CODE_REVIEW_APPROVED`.
+- Step 7: The Code Review gate is satisfied, so Step 7 may proceed. The
+  Verification artifact remains owned by Verification and currently records
+  `REMEDIATION_REQUIRED` for VR-003 through VR-006. Verification must reconcile
+  and reverify those findings against this materially changed implementation
+  candidate; this Code Review does not alter `verification.md`.
+- Candidate identity note: This approval applies to the reviewed uncommitted
+  working-tree candidate based on the HEAD above. It does not claim that HEAD
+  alone contains the reviewed implementation changes.
+
+Current Final Decision:
+
+`CODE_REVIEW_APPROVED`
